@@ -1,0 +1,191 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aabbccddeeff00112233445566778899, type: 3}
+  m_Name: TileDatabase
+  m_EditorClassIdentifier: Pulling.TileDatabase
+  tiles:
+  - id: 0
+    displayName: "\u6D88\u3057\u30B4\u30E0"
+    shortLabel: "\u6D88"
+    color: {r: 0.85, g: 0.85, b: 0.9, a: 0.35}
+    hasCollider: 0
+    isTrigger: 0
+    sprite: {fileID: 0}
+    prefab: {fileID: 0}
+  - id: 1
+    displayName: "\u4F4E\u53CD\u767A"
+    shortLabel: "\u4F4E"
+    color: {r: 0.45, g: 0.32, b: 0.2, a: 1}
+    hasCollider: 1
+    isTrigger: 0
+    sprite: {fileID: 0}
+    prefab: {fileID: 0}
+  - id: 5
+    displayName: "\u9AD8\u53CD\u767A"
+    shortLabel: "\u9AD8"
+    color: {r: 0.55, g: 0.25, b: 0.65, a: 1}
+    hasCollider: 0
+    isTrigger: 0
+    sprite: {fileID: 0}
+    prefab: {fileID: 0}
+  - id: 8
+    displayName: "\u3059\u308A\u629C\u3051"
+    shortLabel: "\u8DB3"
+    color: {r: 0.5, g: 0.7, b: 0.9, a: 1}
+    hasCollider: 0
+    isTrigger: 0
+    sprite: {fileID: 0}
+    prefab: {fileID: 0}
+  - id: 18
+    displayName: "\u659C\u3081\u2197"
+    shortLabel: "\u2197"
+    color: {r: 0.6, g: 0.55, b: 0.45, a: 1}
+    hasCollider: 0
+    isTrigger: 0
+    sprite: {fileID: 0}
+    prefab: {fileID: 0}
+  - id: 19
+    displayName: "\u659C\u3081\u2196"
+    shortLabel: "\u2196"
+    color: {r: 0.6, g: 0.55, b: 0.45, a: 1}
+    hasCollider: 0
+    isTrigger: 0
+    sprite: {fileID: 0}
+    prefab: {fileID: 0}
+  - id: 20
+    displayName: "\u659C\u3081\u2198"
+    shortLabel: "\u2198"
+    color: {r: 0.6, g: 0.55, b: 0.45, a: 1}
+    hasCollider: 0
+    isTrigger: 0
+    sprite: {fileID: 0}
+    prefab: {fileID: 0}
+  - id: 21
+    displayName: "\u659C\u3081\u2199"
+    shortLabel: "\u2199"
+    color: {r: 0.6, g: 0.55, b: 0.45, a: 1}
+    hasCollider: 0
+    isTrigger: 0
+    sprite: {fileID: 0}
+    prefab: {fileID: 0}
+  - id: 4
+    displayName: "\u58CA\u308C\u5F31"
+    shortLabel: "\u5F31"
+    color: {r: 0.82, g: 0.62, b: 0.38, a: 1}
+    hasCollider: 0
+    isTrigger: 0
+    sprite: {fileID: 0}
+    prefab: {fileID: 0}
+  - id: 6
+    displayName: "\u58CA\u308C\u5F37"
+    shortLabel: "\u5F37"
+    color: {r: 0.65, g: 0.45, b: 0.28, a: 1}
+    hasCollider: 0
+    isTrigger: 0
+    sprite: {fileID: 0}
+    prefab: {fileID: 0}
+  - id: 2
+    displayName: "\u30B4\u30FC\u30EB"
+    shortLabel: "\u65D7"
+    color: {r: 0.95, g: 0.8, b: 0.2, a: 1}
+    hasCollider: 0
+    isTrigger: 1
+    sprite: {fileID: 0}
+    prefab: {fileID: 0}
+  - id: 3
+    displayName: "\u5371\u967A"
+    shortLabel: "\u7A9F"
+    color: {r: 0.85, g: 0.2, b: 0.2, a: 1}
+    hasCollider: 0
+    isTrigger: 1
+    sprite: {fileID: 0}
+    prefab: {fileID: 0}
+  - id: 7
+    displayName: "\u592A\u967D\u5149"
+    shortLabel: "\u5149"
+    color: {r: 1, g: 0.95, b: 0.4, a: 0.7}
+    hasCollider: 0
+    isTrigger: 1
+    sprite: {fileID: 0}
+    prefab: {fileID: 0}
+  - id: 17
+    displayName: "\u5149\u53CD\u5C04"
+    shortLabel: "\u93E1"
+    color: {r: 0.7, g: 0.85, b: 0.95, a: 1}
+    hasCollider: 0
+    isTrigger: 0
+    sprite: {fileID: 0}
+    prefab: {fileID: 0}
+  - id: 12
+    displayName: "\u30D5\u30E9\u30F3"
+    shortLabel: "\u5F17"
+    color: {r: 0.95, g: 0.55, b: 0.7, a: 1}
+    hasCollider: 0
+    isTrigger: 0
+    sprite: {fileID: 0}
+    prefab: {fileID: 0}
+  - id: 9
+    displayName: "\u7D05\u7F8E\u9234"
+    shortLabel: "\u9234"
+    color: {r: 0.9, g: 0.25, b: 0.25, a: 1}
+    hasCollider: 0
+    isTrigger: 1
+    sprite: {fileID: 0}
+    prefab: {fileID: 0}
+  - id: 10
+    displayName: "\u30D1\u30C1\u30E5\u30EA\u30FC"
+    shortLabel: "\u5E15"
+    color: {r: 0.55, g: 0.4, b: 0.75, a: 1}
+    hasCollider: 0
+    isTrigger: 1
+    sprite: {fileID: 0}
+    prefab: {fileID: 0}
+  - id: 11
+    displayName: "\u54B2\u591C"
+    shortLabel: "\u54B2"
+    color: {r: 0.75, g: 0.75, b: 0.85, a: 1}
+    hasCollider: 0
+    isTrigger: 1
+    sprite: {fileID: 0}
+    prefab: {fileID: 0}
+  - id: 13
+    displayName: "\u6575\u5F31"
+    shortLabel: "\u5996"
+    color: {r: 0.6, g: 0.85, b: 0.5, a: 1}
+    hasCollider: 0
+    isTrigger: 0
+    sprite: {fileID: 0}
+    prefab: {fileID: 0}
+  - id: 14
+    displayName: "\u6575\u4E2D"
+    shortLabel: "\u6C37"
+    color: {r: 0.4, g: 0.75, b: 0.95, a: 1}
+    hasCollider: 0
+    isTrigger: 0
+    sprite: {fileID: 0}
+    prefab: {fileID: 0}
+  - id: 15
+    displayName: "\u6575BOSS"
+    shortLabel: B
+    color: {r: 0.85, g: 0.35, b: 0.55, a: 1}
+    hasCollider: 0
+    isTrigger: 0
+    sprite: {fileID: 0}
+    prefab: {fileID: 0}
+  - id: 16
+    displayName: "\u5F3E"
+    shortLabel: "\u5F3E"
+    color: {r: 0.95, g: 0.5, b: 0.2, a: 1}
+    hasCollider: 0
+    isTrigger: 1
+    sprite: {fileID: 0}
+    prefab: {fileID: 0}

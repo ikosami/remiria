@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e7d6c5b4a39281706f5e4d3c2b1a090, type: 3}
+  m_Name: Stage_1
+  m_EditorClassIdentifier: Pulling.StageAsset
+  version: 1
+  id: Stage_1
+  width: 48
+  height: 12
+  cellSize: 1
+  cameraVisibleRows: 12
+  spawnX: 4
+  spawnY: 2
+  rows:
+  - 1:16,3:5,1:27
+  - 0:9,18,4,0:34,2,0:2
+  - 0:10,4,0:19,1:5,0:13
+  - 0:48
+  - 0:14,1:11,0:23
+  - 0:3,21,0:5,20,0:38
+  - 0:3,1:7,0:38
+  - 0:48
+  - 0:48
+  - 0:48
+  - 0:48
+  - 0:16,1,0:31
