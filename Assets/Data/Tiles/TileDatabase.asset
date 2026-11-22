@@ -20,6 +20,7 @@ MonoBehaviour:
     hasCollider: 0
     isTrigger: 0
     sprite: {fileID: 0}
+    damagedSprite: {fileID: 0}
     prefab: {fileID: 0}
   - id: 1
     displayName: "\u4F4E\u53CD\u767A"
@@ -27,7 +28,8 @@ MonoBehaviour:
     color: {r: 0.45, g: 0.32, b: 0.2, a: 1}
     hasCollider: 1
     isTrigger: 0
-    sprite: {fileID: 0}
+    sprite: {fileID: 21300000, guid: 4d5d51201e384f1ea9e9cf84b5d15f40, type: 3}
+    damagedSprite: {fileID: 0}
     prefab: {fileID: 0}
   - id: 5
     displayName: "\u9AD8\u53CD\u767A"
@@ -35,7 +37,8 @@ MonoBehaviour:
     color: {r: 0.55, g: 0.25, b: 0.65, a: 1}
     hasCollider: 0
     isTrigger: 0
-    sprite: {fileID: 0}
+    sprite: {fileID: 21300000, guid: 54e6a595748c4b609654dcfb39ef9f08, type: 3}
+    damagedSprite: {fileID: 0}
     prefab: {fileID: 0}
   - id: 8
     displayName: "\u3059\u308A\u629C\u3051"
@@ -43,7 +46,8 @@ MonoBehaviour:
     color: {r: 0.5, g: 0.7, b: 0.9, a: 1}
     hasCollider: 0
     isTrigger: 0
-    sprite: {fileID: 0}
+    sprite: {fileID: 21300000, guid: fcfee4fbdc464b629bdedb976527e6c8, type: 3}
+    damagedSprite: {fileID: 0}
     prefab: {fileID: 0}
   - id: 18
     displayName: "\u659C\u3081\u2197"
@@ -51,7 +55,8 @@ MonoBehaviour:
     color: {r: 0.6, g: 0.55, b: 0.45, a: 1}
     hasCollider: 0
     isTrigger: 0
-    sprite: {fileID: 0}
+    sprite: {fileID: 21300000, guid: d8e6e7f6fc0f4c669864dca1940d3bba, type: 3}
+    damagedSprite: {fileID: 0}
     prefab: {fileID: 0}
   - id: 19
     displayName: "\u659C\u3081\u2196"
@@ -59,7 +64,8 @@ MonoBehaviour:
     color: {r: 0.6, g: 0.55, b: 0.45, a: 1}
     hasCollider: 0
     isTrigger: 0
-    sprite: {fileID: 0}
+    sprite: {fileID: 21300000, guid: 01ec12ac1b96412dab8ad27d4f758dc8, type: 3}
+    damagedSprite: {fileID: 0}
     prefab: {fileID: 0}
   - id: 20
     displayName: "\u659C\u3081\u2198"
@@ -67,7 +73,8 @@ MonoBehaviour:
     color: {r: 0.6, g: 0.55, b: 0.45, a: 1}
     hasCollider: 0
     isTrigger: 0
-    sprite: {fileID: 0}
+    sprite: {fileID: 21300000, guid: 3cc2c4925e6240d3b59eed10ff22a76f, type: 3}
+    damagedSprite: {fileID: 0}
     prefab: {fileID: 0}
   - id: 21
     displayName: "\u659C\u3081\u2199"
@@ -75,7 +82,44 @@ MonoBehaviour:
     color: {r: 0.6, g: 0.55, b: 0.45, a: 1}
     hasCollider: 0
     isTrigger: 0
+    sprite: {fileID: 21300000, guid: 4c007f9f4d414f6f968221f0621e5042, type: 3}
+    damagedSprite: {fileID: 0}
+    prefab: {fileID: 0}
+  - id: 26
+    displayName: "\u93E1\u2197"
+    shortLabel: 
+    color: {r: 0.72, g: 0.86, b: 0.96, a: 1}
+    hasCollider: 0
+    isTrigger: 0
     sprite: {fileID: 0}
+    damagedSprite: {fileID: 0}
+    prefab: {fileID: 0}
+  - id: 27
+    displayName: "\u93E1\u2196"
+    shortLabel: 
+    color: {r: 0.72, g: 0.86, b: 0.96, a: 1}
+    hasCollider: 0
+    isTrigger: 0
+    sprite: {fileID: 0}
+    damagedSprite: {fileID: 0}
+    prefab: {fileID: 0}
+  - id: 28
+    displayName: "\u93E1\u2198"
+    shortLabel: 
+    color: {r: 0.72, g: 0.86, b: 0.96, a: 1}
+    hasCollider: 0
+    isTrigger: 0
+    sprite: {fileID: 0}
+    damagedSprite: {fileID: 0}
+    prefab: {fileID: 0}
+  - id: 29
+    displayName: "\u93E1\u2199"
+    shortLabel: 
+    color: {r: 0.72, g: 0.86, b: 0.96, a: 1}
+    hasCollider: 0
+    isTrigger: 0
+    sprite: {fileID: 0}
+    damagedSprite: {fileID: 0}
     prefab: {fileID: 0}
   - id: 4
     displayName: "\u58CA\u308C\u5F31"
@@ -83,7 +127,8 @@ MonoBehaviour:
     color: {r: 0.82, g: 0.62, b: 0.38, a: 1}
     hasCollider: 0
     isTrigger: 0
-    sprite: {fileID: 0}
+    sprite: {fileID: 21300000, guid: 5aab272eb38e4e7f998288df85eee6c3, type: 3}
+    damagedSprite: {fileID: 0}
     prefab: {fileID: 0}
   - id: 6
     displayName: "\u58CA\u308C\u5F37"
@@ -91,7 +136,35 @@ MonoBehaviour:
     color: {r: 0.65, g: 0.45, b: 0.28, a: 1}
     hasCollider: 0
     isTrigger: 0
+    sprite: {fileID: 21300000, guid: db8669ea83f34421b55af812cbcb8ea3, type: 3}
+    damagedSprite: {fileID: 21300000, guid: 82035e0f0ed841d9afcf5b9e69925951, type: 3}
+    prefab: {fileID: 0}
+  - id: 23
+    displayName: "\u4E00\u767A"
+    shortLabel: "\u4E00"
+    color: {r: 0.82, g: 0.18, b: 0.24, a: 1}
+    hasCollider: 0
+    isTrigger: 0
     sprite: {fileID: 0}
+    damagedSprite: {fileID: 0}
+    prefab: {fileID: 0}
+  - id: 25
+    displayName: "\u30AA\u30F3\u30AA\u30D5"
+    shortLabel: "\u30AA"
+    color: {r: 0.16, g: 0.62, b: 0.48, a: 1}
+    hasCollider: 0
+    isTrigger: 0
+    sprite: {fileID: 0}
+    damagedSprite: {fileID: 0}
+    prefab: {fileID: 0}
+  - id: 24
+    displayName: "\u6249"
+    shortLabel: "\u6249"
+    color: {r: 0.32, g: 0.4, b: 0.58, a: 1}
+    hasCollider: 0
+    isTrigger: 0
+    sprite: {fileID: 0}
+    damagedSprite: {fileID: 0}
     prefab: {fileID: 0}
   - id: 2
     displayName: "\u30B4\u30FC\u30EB"
@@ -99,7 +172,8 @@ MonoBehaviour:
     color: {r: 0.95, g: 0.8, b: 0.2, a: 1}
     hasCollider: 0
     isTrigger: 1
-    sprite: {fileID: 0}
+    sprite: {fileID: 21300000, guid: d140753e26a74dfc8caccee2b808a971, type: 3}
+    damagedSprite: {fileID: 0}
     prefab: {fileID: 0}
   - id: 3
     displayName: "\u5371\u967A"
@@ -107,7 +181,8 @@ MonoBehaviour:
     color: {r: 0.85, g: 0.2, b: 0.2, a: 1}
     hasCollider: 0
     isTrigger: 1
-    sprite: {fileID: 0}
+    sprite: {fileID: 21300000, guid: 7896f64a2bd24bb4b43cd65829d704a4, type: 3}
+    damagedSprite: {fileID: 0}
     prefab: {fileID: 0}
   - id: 7
     displayName: "\u592A\u967D\u5149"
@@ -115,23 +190,17 @@ MonoBehaviour:
     color: {r: 1, g: 0.95, b: 0.4, a: 0.7}
     hasCollider: 0
     isTrigger: 1
-    sprite: {fileID: 0}
-    prefab: {fileID: 0}
-  - id: 17
-    displayName: "\u5149\u53CD\u5C04"
-    shortLabel: "\u93E1"
-    color: {r: 0.7, g: 0.85, b: 0.95, a: 1}
-    hasCollider: 0
-    isTrigger: 0
-    sprite: {fileID: 0}
+    sprite: {fileID: 21300000, guid: 2d60f23eb2e640968dc35f7d554fe906, type: 3}
+    damagedSprite: {fileID: 0}
     prefab: {fileID: 0}
   - id: 12
     displayName: "\u30D5\u30E9\u30F3"
     shortLabel: "\u5F17"
     color: {r: 0.95, g: 0.55, b: 0.7, a: 1}
     hasCollider: 0
-    isTrigger: 0
-    sprite: {fileID: 0}
+    isTrigger: 1
+    sprite: {fileID: 21300000, guid: c8996d2e3fa142d2be5b35d7940dfd1a, type: 3}
+    damagedSprite: {fileID: 0}
     prefab: {fileID: 0}
   - id: 9
     displayName: "\u7D05\u7F8E\u9234"
@@ -139,7 +208,8 @@ MonoBehaviour:
     color: {r: 0.9, g: 0.25, b: 0.25, a: 1}
     hasCollider: 0
     isTrigger: 1
-    sprite: {fileID: 0}
+    sprite: {fileID: 21300000, guid: b3d548bcb24b4a3f91e9b2e457213460, type: 3}
+    damagedSprite: {fileID: 0}
     prefab: {fileID: 0}
   - id: 10
     displayName: "\u30D1\u30C1\u30E5\u30EA\u30FC"
@@ -147,7 +217,8 @@ MonoBehaviour:
     color: {r: 0.55, g: 0.4, b: 0.75, a: 1}
     hasCollider: 0
     isTrigger: 1
-    sprite: {fileID: 0}
+    sprite: {fileID: 21300000, guid: a12b5c7f4ca54842bef8cf94628fc8a6, type: 3}
+    damagedSprite: {fileID: 0}
     prefab: {fileID: 0}
   - id: 11
     displayName: "\u54B2\u591C"
@@ -155,31 +226,44 @@ MonoBehaviour:
     color: {r: 0.75, g: 0.75, b: 0.85, a: 1}
     hasCollider: 0
     isTrigger: 1
-    sprite: {fileID: 0}
+    sprite: {fileID: 21300000, guid: 6196df0170b24ceaab35396ebe5f1b8d, type: 3}
+    damagedSprite: {fileID: 0}
     prefab: {fileID: 0}
   - id: 13
-    displayName: "\u6575\u5F31"
-    shortLabel: "\u5996"
+    displayName: "\u7389"
+    shortLabel: "\u7389"
     color: {r: 0.6, g: 0.85, b: 0.5, a: 1}
     hasCollider: 0
     isTrigger: 0
-    sprite: {fileID: 0}
+    sprite: {fileID: 21300000, guid: f3b03d523fb74536bea5c61e44dacef2, type: 3}
+    damagedSprite: {fileID: 0}
     prefab: {fileID: 0}
   - id: 14
-    displayName: "\u6575\u4E2D"
-    shortLabel: "\u6C37"
+    displayName: "\uFF13\u65B9\u5411"
+    shortLabel: "\uFF13"
     color: {r: 0.4, g: 0.75, b: 0.95, a: 1}
     hasCollider: 0
     isTrigger: 0
-    sprite: {fileID: 0}
+    sprite: {fileID: 21300000, guid: 4b8a2462e6bf42f9bdab858776e3bb6a, type: 3}
+    damagedSprite: {fileID: 0}
     prefab: {fileID: 0}
-  - id: 15
-    displayName: "\u6575BOSS"
-    shortLabel: B
-    color: {r: 0.85, g: 0.35, b: 0.55, a: 1}
+  - id: 22
+    displayName: "\u5927\u7389"
+    shortLabel: "\u5927"
+    color: {r: 0.95, g: 0.55, b: 0.15, a: 1}
     hasCollider: 0
     isTrigger: 0
     sprite: {fileID: 0}
+    damagedSprite: {fileID: 0}
+    prefab: {fileID: 0}
+  - id: 15
+    displayName: "\u30EC\u30FC\u30B6\u30FC"
+    shortLabel: "\u5149"
+    color: {r: 0.85, g: 0.35, b: 0.55, a: 1}
+    hasCollider: 0
+    isTrigger: 0
+    sprite: {fileID: 21300000, guid: ed3aea29dfdd49fdb301bceb4b23a99c, type: 3}
+    damagedSprite: {fileID: 0}
     prefab: {fileID: 0}
   - id: 16
     displayName: "\u5F3E"
@@ -187,5 +271,6 @@ MonoBehaviour:
     color: {r: 0.95, g: 0.5, b: 0.2, a: 1}
     hasCollider: 0
     isTrigger: 1
-    sprite: {fileID: 0}
+    sprite: {fileID: 21300000, guid: 61cef16a2c8b4e8082d99da50beff2a6, type: 3}
+    damagedSprite: {fileID: 0}
     prefab: {fileID: 0}

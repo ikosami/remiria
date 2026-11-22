@@ -14,7 +14,8 @@ namespace Pulling
 
         void OnTriggerEnter2D(Collider2D other)
         {
-            if (_activated || other.GetComponent<PlayerController>() == null)
+            var player = other.GetComponent<PlayerController>();
+            if (_activated || player == null)
             {
                 return;
             }
@@ -25,7 +26,7 @@ namespace Pulling
                 _renderer.color = new Color(0.9f, 0.7f, 1f, 1f);
             }
 
-            Debug.Log("[Patchouli] ステージ変化は今後実装予定");
+            player.GrantSunImmunity(PlayerTuning.PatchouliSunImmunitySeconds);
         }
     }
 }

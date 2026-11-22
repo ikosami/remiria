@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -25,6 +26,9 @@ namespace Pulling
         bool _middlePressing;
         bool _middleDragged;
         int _selectedTile = TileIds.Ground;
+        bool _meilingAiming;
+        int _meilingX;
+        int _meilingY;
         Vector2 _dragPanScreen;
         Vector2 _middlePressScreen;
 
@@ -71,6 +75,7 @@ namespace Pulling
 
             _active = true;
             _game.OnEditorEntered();
+            _builder?.SetMeilingGuides(true);
             _overlay.Show(_builder.Width, _builder.Height, _builder.CellSize);
             _ui.SetEditorVisible(true);
             _ui.SetSettingsVisible(false);
@@ -90,9 +95,11 @@ namespace Pulling
             _active = false;
             _painting = false;
             _erasing = false;
+            _meilingAiming = false;
             _dragPanning = false;
             _middlePressing = false;
             _middleDragged = false;
+            _builder?.SetMeilingGuides(false);
             AutoSave();
             _paintDirty = false;
             SetGhostVisible(false);
@@ -108,18 +115,42 @@ namespace Pulling
 
         public void OpenSettings()
         {
+            if (_active)
+            {
+                AutoSave();
+            }
+
+            _game?.RefreshStageCatalog();
             _ui.RefreshSettings(_game.RuntimeStage != null ? _game.RuntimeStage.id : string.Empty, _builder.Width);
+            _ui.RebuildStageList(_game.Catalog, _game.CatalogIndex);
             _ui.SetSettingsVisible(true);
         }
+
         public void CloseSettings() => _ui.SetSettingsVisible(false);
 
-        public void OpenStageList()
-        {
-            _ui.RebuildStageList(_game.Catalog, _game.CatalogIndex);
-            _ui.SetStageListVisible(true);
-        }
+        public void OpenStageList() => OpenSettings();
 
-        public void CloseStageList() => _ui.SetStageListVisible(false);
+        public void CloseStageList() => CloseSettings();
+
+        public void ReorderStages(List<string> orderedIds)
+        {
+            if (_game == null)
+            {
+                return;
+            }
+
+            if (!_game.TryReorderStages(orderedIds, out string message))
+            {
+                _ui.SetNewStageWarning(message);
+                _ui.SetStatus(message);
+                _ui.RebuildStageList(_game.Catalog, _game.CatalogIndex);
+                return;
+            }
+
+            _ui.SetNewStageWarning(null);
+            _ui.RebuildStageList(_game.Catalog, _game.CatalogIndex);
+            _ui.SetStatus(message);
+        }
 
         public void SwitchToStage(int index)
         {
@@ -131,15 +162,83 @@ namespace Pulling
             if (index == _game.CatalogIndex)
             {
                 _ui.SetStatus(CurrentStatusText());
-                _ui.SetStageListVisible(false);
                 return;
             }
 
             AutoSave();
             _game.LoadStage(index, true);
             RefreshAfterStageChange();
-            _ui.SetStageListVisible(false);
-            _ui.SetStatus($"{_game.RuntimeStage.id} に切り替えました");
+            _ui.RebuildStageList(_game.Catalog, _game.CatalogIndex);
+            _ui.SetStatus($"{StagePersistence.DisplayName(_game.RuntimeStage.id)} に切り替えました");
+        }
+
+        public void RenameStage(string stageId, string requestedName)
+        {
+            if (_game == null)
+            {
+                return;
+            }
+
+            bool current = _game.RuntimeStage != null && _game.RuntimeStage.id == stageId;
+            AutoSave();
+            if (!_game.TryRenameStage(stageId, requestedName, out string message))
+            {
+                _ui.SetNewStageWarning(message);
+                _ui.SetStatus(message);
+                return;
+            }
+
+            if (current)
+            {
+                RefreshAfterStageChange();
+            }
+
+            _ui.SetNewStageWarning(null);
+            _ui.RebuildStageList(_game.Catalog, _game.CatalogIndex);
+            if (!string.IsNullOrEmpty(message))
+            {
+                _ui.SetStatus(message);
+            }
+        }
+
+        public void DeleteStageById(string stageId)
+        {
+            if (_game?.Catalog == null)
+            {
+                return;
+            }
+
+            DeleteStage(_game.Catalog.IndexOfId(stageId));
+        }
+
+        public void DeleteStage(int index)
+        {
+            if (_game == null)
+            {
+                return;
+            }
+
+            bool current = index == _game.CatalogIndex;
+            if (!current)
+            {
+                AutoSave();
+            }
+
+            if (!_game.TryDeleteStage(index, out string message))
+            {
+                _ui.SetNewStageWarning(message);
+                _ui.SetStatus(message);
+                return;
+            }
+
+            if (current)
+            {
+                RefreshAfterStageChange();
+            }
+
+            _ui.RebuildStageList(_game.Catalog, _game.CatalogIndex);
+            _ui.SetNewStageWarning(null);
+            _ui.SetStatus(message);
         }
 
         public void CreateStage(string requestedId)
@@ -202,6 +301,13 @@ namespace Pulling
         {
             if (_game == null)
             {
+                return;
+            }
+
+            string id = _game.RuntimeStage != null ? _game.RuntimeStage.id : null;
+            if (StagePersistence.IsDeletedEditStage(id, _game.Catalog))
+            {
+                _game.RefreshStageCatalog();
                 return;
             }
 
@@ -401,6 +507,19 @@ namespace Pulling
             }
 
             ShowHover(screen);
+            if (_selectedTile == TileIds.Meiling)
+            {
+                HandleMeilingPointer(
+                    screen,
+                    leftPressed,
+                    leftHeld,
+                    leftReleased,
+                    rightPressed,
+                    rightHeld,
+                    rightReleased);
+                return;
+            }
+
             if (!_painting && !_erasing)
             {
                 if (leftPressed)
@@ -478,15 +597,116 @@ namespace Pulling
             _paintDirty = true;
         }
 
+        void HandleMeilingPointer(
+            Vector2 screen,
+            bool leftPressed,
+            bool leftHeld,
+            bool leftReleased,
+            bool rightPressed,
+            bool rightHeld,
+            bool rightReleased)
+        {
+            if (!_painting && !_erasing)
+            {
+                if (leftPressed)
+                {
+                    BeginMeilingStroke(screen);
+                }
+                else if (rightPressed)
+                {
+                    _erasing = true;
+                    PaintAt(screen, TileIds.Empty);
+                }
+            }
+            else if (_painting && leftHeld)
+            {
+                UpdateMeilingStroke(screen);
+            }
+            else if (_erasing && rightHeld)
+            {
+                PaintAt(screen, TileIds.Empty);
+            }
+
+            if ((_painting && leftReleased) || (_erasing && rightReleased))
+            {
+                FinishPaintStroke();
+            }
+        }
+
+        void BeginMeilingStroke(Vector2 screen)
+        {
+            if (!TryScreenToCell(screen, out int x, out int y, out _))
+            {
+                return;
+            }
+
+            _painting = true;
+            _meilingAiming = true;
+            _meilingX = x;
+            _meilingY = y;
+            if (_builder.GetCell(x, y) != TileIds.Meiling)
+            {
+                _builder.SetCell(x, y, TileIds.Meiling);
+                _builder.SetCollidersEnabled(false);
+            }
+
+            _paintDirty = true;
+            var setting = _game.RuntimeStage != null ? _game.RuntimeStage.FindMeiling(x, y) : null;
+            float angle = setting != null ? setting.angle : 0f;
+            float strength = setting != null ? setting.strength : PlayerTuning.MeilingDefaultSpeed;
+            _ui.SetStatus(MeilingStatus(angle, strength));
+        }
+
+        void UpdateMeilingStroke(Vector2 screen)
+        {
+            if (!_meilingAiming || _builder == null)
+            {
+                return;
+            }
+
+            var cam = Camera.main;
+            if (cam == null)
+            {
+                return;
+            }
+
+            Vector3 world = cam.ScreenToWorldPoint(new Vector3(screen.x, screen.y, Mathf.Abs(cam.transform.position.z)));
+            Vector2 delta = (Vector2)world - (Vector2)_builder.CellCenter(_meilingX, _meilingY);
+            if (delta.magnitude < 0.15f)
+            {
+                return;
+            }
+
+            float angle = Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg;
+            if (angle < 0f)
+            {
+                angle += 360f;
+            }
+
+            float span = Mathf.Clamp01(delta.magnitude / PlayerTuning.MeilingAimRadius);
+            float strength = Mathf.Lerp(PlayerTuning.MeilingMinSpeed, PlayerTuning.MeilingMaxSpeed, span);
+            _builder.ConfigureMeiling(_meilingX, _meilingY, angle, strength);
+            _paintDirty = true;
+            _ui.SetStatus(MeilingStatus(angle, strength));
+        }
+
+        static string MeilingStatus(float angle, float strength)
+        {
+            return $"美鈴  方向 {Mathf.RoundToInt(angle)}°  強さ {strength:0.0}";
+        }
+
         void FinishPaintStroke()
         {
             _painting = false;
             _erasing = false;
+            _meilingAiming = false;
             if (_paintDirty)
             {
                 AutoSave();
                 _paintDirty = false;
             }
+
+            _ui?.SetStatus(CurrentStatusText());
         }
 
         bool TryScreenToCell(Vector2 screen, out int x, out int y, out Vector3 center)
@@ -522,6 +742,7 @@ namespace Pulling
             {
                 _ghostRenderer.sprite = SpriteFactory.CreateCircle(new Color(0.3f, 0.75f, 1f, 0.7f));
                 _ghostRenderer.color = Color.white;
+                TileSprites.FitToCell(_ghostRenderer.transform, _ghostRenderer.sprite, _builder != null ? _builder.CellSize : 1f);
                 return;
             }
 
@@ -529,9 +750,8 @@ namespace Pulling
             if (def != null)
             {
                 _ghostRenderer.sprite = def.sprite != null ? def.sprite : SpriteFactory.CreateSolid(def.color);
-                var color = def.color;
-                color.a = 0.7f;
-                _ghostRenderer.color = color;
+                _ghostRenderer.color = new Color(1f, 1f, 1f, 0.7f);
+                TileSprites.FitToCell(_ghostRenderer.transform, _ghostRenderer.sprite, _builder != null ? _builder.CellSize : 1f);
             }
         }
 
@@ -557,7 +777,18 @@ namespace Pulling
         string CurrentStatusText()
         {
             var stage = _game.RuntimeStage;
-            return stage != null ? $"{stage.id}  初期位置 ({stage.spawnX},{stage.spawnY})" : string.Empty;
+            if (stage == null)
+            {
+                return string.Empty;
+            }
+
+            string text = $"{StagePersistence.DisplayName(stage.id)}  初期位置 ({stage.spawnX},{stage.spawnY})";
+            if (_selectedTile == TileIds.Meiling)
+            {
+                text += "  美鈴を選択した状態でドラッグ";
+            }
+
+            return text;
         }
     }
 }

@@ -37,21 +37,46 @@ namespace Pulling
         Vector2 _lastAimDirection = Vector2.right;
         Vector3 _lastSafePosition;
         GridMapBuilder _mapBuilder;
-        bool _sakuyaShield;
+        bool _hasSakuyaPoint;
+        Vector3 _sakuyaPoint;
+        float _sunImmunity;
         float _health = PlayerTuning.MaxHealth;
         float _sunExposure;
         Image _hpFill;
+        LowHealthVignette _healthVignette;
         bool _settling;
-        [SerializeField] Sprite _normalSprite;
-        [SerializeField] Sprite _jumpWaitSprite;
-        [SerializeField] Sprite _jumpSprite;
+        bool _airJumpReady = true;
+        bool _airborneJumpReady;
+        bool _aimFromAir;
+        Remiria _remiria;
         SpriteRenderer _visual;
+        readonly AirJumpOutline _airJumpOutline = new AirJumpOutline();
         bool _faceLeft;
+        FlightPose[] _flightPoses = System.Array.Empty<FlightPose>();
+        MeilingControl _meilingPhase;
+        bool _meilingPending;
+        float _meilingTime;
+        Vector2 _meilingOrigin;
+        Vector2 _meilingCenter;
+        Vector2 _meilingVelocity;
 
-        const float SpawnSupportProbe = 0.4f;
-        const float VisualHeight = 0.9f;
+        enum MeilingControl
+        {
+            None,
+            Pull,
+            Hold,
+            Launch
+        }
 
-        public bool HasAppearance => _normalSprite != null;
+        const float BodyToImage = 0.86f;
+
+        struct FlightPose
+        {
+            public Vector2 Direction;
+            public Sprite Sprite;
+        }
+
+        public bool HasAppearance => _remiria != null && (_remiria.normalLeft != null || _remiria.normalRight != null);
 
         public PlayerMoveState State => _state;
         public float Health => _health;
@@ -59,8 +84,35 @@ namespace Pulling
         public Vector2 PrePhysicsVelocity => _prePhysicsVelocity;
         public Vector2 LastAimDirection => _lastAimDirection;
         public Vector3 LastSafePosition => _lastSafePosition;
-        public bool HasSakuyaShield => _sakuyaShield;
+        public bool HasSakuyaPoint => _hasSakuyaPoint;
+        public bool IsSunImmune => _sunImmunity > 0f;
         public bool IsSettling => _settling;
+        public bool IsAirSlowMotion => _state == PlayerMoveState.Aiming && _aimFromAir;
+        public bool IsMeilingControlled => _meilingPending || _meilingPhase != MeilingControl.None;
+
+        public bool BeginMeiling(Vector2 center, Vector2 velocity)
+        {
+            if (_body == null || _locked || IsMeilingControlled)
+            {
+                return false;
+            }
+
+            if (velocity.sqrMagnitude < 0.01f)
+            {
+                velocity = Vector2.right * PlayerTuning.MeilingDefaultSpeed;
+            }
+
+            _pointerHeld = false;
+            _aimLine?.Hide();
+            Time.timeScale = 1f;
+            _aimFromAir = false;
+            _settling = false;
+            _meilingPending = true;
+            _meilingCenter = center;
+            _meilingVelocity = velocity;
+            _lastAimDirection = velocity.normalized;
+            return true;
+        }
 
         public void SmashThrough(Vector2 velocity)
         {
@@ -79,6 +131,30 @@ namespace Pulling
             }
         }
 
+        public void Nudge(Vector2 impulse)
+        {
+            if (_body == null || _locked || _settling || impulse.sqrMagnitude < 0.0001f)
+            {
+                return;
+            }
+
+            if (_state == PlayerMoveState.Aiming)
+            {
+                _pointerHeld = false;
+                _aimFromAir = false;
+                _aimLine?.Hide();
+                Time.timeScale = 1f;
+            }
+
+            _internalVelocity += impulse;
+            _prePhysicsVelocity = _internalVelocity;
+            _lowSpeedFrames = 0;
+            _body.constraints = RigidbodyConstraints2D.FreezeRotation;
+            _body.WakeUp();
+            ApplyActualVelocity();
+            _state = PlayerMoveState.Flying;
+        }
+
         public void Bind(Rigidbody2D body, CircleCollider2D col, AimLineView aimLine, Camera cam)
         {
             _body = body;
@@ -90,24 +166,45 @@ namespace Pulling
             RefreshAppearance();
         }
 
-        public void SetSprites(Sprite normal, Sprite jumpWait, Sprite jump)
+        public void Apply(Remiria remiria)
         {
-            if (normal != null)
+            if (remiria != null)
             {
-                _normalSprite = normal;
+                _remiria = remiria;
             }
 
-            if (jumpWait != null)
-            {
-                _jumpWaitSprite = jumpWait;
-            }
-
-            if (jump != null)
-            {
-                _jumpSprite = jump;
-            }
-
+            RebuildFlightPoses();
             RefreshAppearance();
+        }
+
+        void RebuildFlightPoses()
+        {
+            if (_remiria == null)
+            {
+                _flightPoses = System.Array.Empty<FlightPose>();
+                return;
+            }
+
+            _flightPoses = new[]
+            {
+                Pose(Vector2.right, _remiria.right),
+                Pose(new Vector2(1f, 1f), _remiria.upRight),
+                Pose(Vector2.up, _remiria.up),
+                Pose(new Vector2(-1f, 1f), _remiria.upLeft),
+                Pose(Vector2.left, _remiria.left),
+                Pose(new Vector2(-1f, -1f), _remiria.downLeft),
+                Pose(Vector2.down, _remiria.down),
+                Pose(new Vector2(1f, -1f), _remiria.downRight)
+            };
+        }
+
+        static FlightPose Pose(Vector2 direction, Sprite sprite)
+        {
+            return new FlightPose
+            {
+                Direction = direction.normalized,
+                Sprite = sprite
+            };
         }
 
         public void BindMapBuilder(GridMapBuilder builder)
@@ -121,12 +218,33 @@ namespace Pulling
             RefreshHpBar();
         }
 
+        public void BindHealthVignette(LowHealthVignette vignette)
+        {
+            _healthVignette = vignette;
+            RefreshHpBar();
+        }
+
         public void SetHpBarVisible(bool visible)
         {
             var bar = HpBarRoot();
             if (bar != null)
             {
                 bar.gameObject.SetActive(visible);
+            }
+
+            _healthVignette?.SetShown(visible);
+        }
+
+        public void SetVisible(bool visible)
+        {
+            if (!visible)
+            {
+                Freeze();
+            }
+
+            if (gameObject.activeSelf != visible)
+            {
+                gameObject.SetActive(visible);
             }
         }
 
@@ -165,7 +283,7 @@ namespace Pulling
 
         public bool DrainSunlight(float deltaTime)
         {
-            if (_locked || _health <= 0f || deltaTime <= 0f)
+            if (_locked || _health <= 0f || deltaTime <= 0f || IsSunImmune)
             {
                 return false;
             }
@@ -186,33 +304,60 @@ namespace Pulling
 
         void RefreshHpBar()
         {
-            if (_hpFill == null)
+            float ratio = PlayerTuning.MaxHealth <= 0f ? 0f : Mathf.Clamp01(_health / PlayerTuning.MaxHealth);
+            if (_hpFill != null)
             {
-                return;
+                _hpFill.fillAmount = ratio;
             }
 
-            _hpFill.fillAmount = Mathf.Clamp01(_health / PlayerTuning.MaxHealth);
+            _healthVignette?.SetRatio(ratio);
         }
 
-        public void GrantSakuyaShield()
+        public void TouchSakuya(Vector3 world)
         {
-            _sakuyaShield = true;
+            _hasSakuyaPoint = true;
+            _sakuyaPoint = world;
+            ResetHealth();
         }
 
-        public bool ConsumeSakuyaShield()
+        public bool TryRespawnAtSakuya()
         {
-            if (!_sakuyaShield)
+            if (!_hasSakuyaPoint)
             {
                 return false;
             }
 
-            _sakuyaShield = false;
+            Vector3 point = _sakuyaPoint;
+            Vector2 current = _body != null ? _body.position : (Vector2)transform.position;
+            if (((Vector2)point - current).sqrMagnitude < 0.0001f)
+            {
+                return false;
+            }
+
+            PlaceAt(point, true);
+            _hasSakuyaPoint = true;
+            _sakuyaPoint = point;
             return true;
         }
 
-        public void ReturnToSafePosition()
+        public void GrantSunImmunity(float seconds)
         {
-            PlaceAt(_lastSafePosition, false);
+            if (seconds <= 0f)
+            {
+                return;
+            }
+
+            _sunImmunity = Mathf.Max(_sunImmunity, seconds);
+        }
+
+        public void TickSunImmunity(float deltaTime)
+        {
+            if (_sunImmunity <= 0f || deltaTime <= 0f)
+            {
+                return;
+            }
+
+            _sunImmunity = Mathf.Max(0f, _sunImmunity - deltaTime);
         }
 
         public void SetInputEnabled(bool enabled)
@@ -241,7 +386,11 @@ namespace Pulling
 
         public void PlaceAt(Vector3 world, bool resetHealth)
         {
+            CancelMeilingMotion();
             _spawnPosition = world;
+            _airJumpReady = true;
+            _airborneJumpReady = false;
+            _aimFromAir = false;
             if (_body != null)
             {
                 _body.position = world;
@@ -249,22 +398,16 @@ namespace Pulling
 
             transform.position = world;
             _lastSafePosition = world;
-            _sakuyaShield = false;
+            _hasSakuyaPoint = false;
+            _sunImmunity = 0f;
             _settling = false;
             if (resetHealth)
             {
                 ResetHealth();
             }
 
-            Physics2D.SyncTransforms();
-            if (HasSupportBelow())
-            {
-                EnterStopped();
-            }
-            else
-            {
-                BeginDrop();
-            }
+            // 開始直後の形状問い合わせはタイルが未反映で、空中なのに足場ありと誤ることがある。接触するまで落とす。
+            BeginDrop();
         }
 
         public void Respawn()
@@ -301,12 +444,14 @@ namespace Pulling
                 return;
             }
 
+            CancelMeilingMotion();
             _settling = false;
             _internalVelocity = Vector2.zero;
             _prePhysicsVelocity = Vector2.zero;
             RestoreBodyFlightForces();
             _body.linearVelocity = Vector2.zero;
             _body.angularVelocity = 0f;
+            _body.sleepMode = RigidbodySleepMode2D.StartAwake;
             _body.constraints = RigidbodyConstraints2D.FreezeAll;
             _state = PlayerMoveState.Stopped;
             _pointerHeld = false;
@@ -316,7 +461,7 @@ namespace Pulling
 
         void Update()
         {
-            if (_body == null || _locked || !_inputEnabled)
+            if (_body == null || _locked || !_inputEnabled || IsMeilingControlled)
             {
                 return;
             }
@@ -360,20 +505,38 @@ namespace Pulling
                 return;
             }
 
-            if (_state == PlayerMoveState.Flying && !_settling)
+            if (_meilingPending)
+            {
+                _meilingPending = false;
+                ActivateMeiling();
+            }
+
+            if (_meilingPhase != MeilingControl.None)
+            {
+                StepMeiling();
+                return;
+            }
+
+            if (_state == PlayerMoveState.Aiming && _aimFromAir)
             {
                 StepFlight();
-                TryAutoStop();
+                return;
+            }
+
+            if (_state == PlayerMoveState.Flying)
+            {
+                StepFlight();
+                if (!_settling)
+                {
+                    TryAutoStop();
+                }
+
                 return;
             }
 
             RestoreBodyFlightForces();
             _internalVelocity = _body.linearVelocity;
             _prePhysicsVelocity = _body.linearVelocity;
-            if (_state == PlayerMoveState.Flying)
-            {
-                ClampFallSpeed();
-            }
         }
 
         void StepFlight()
@@ -467,34 +630,44 @@ namespace Pulling
 
         void ClampFallSpeed()
         {
-            Vector2 vel = _body.linearVelocity;
-            float minY = -PlayerTuning.MaxFallSpeed;
-            if (vel.y < minY)
+            if (_body == null)
             {
-                vel.y = minY;
-                _body.linearVelocity = vel;
+                return;
             }
+
+            _body.linearVelocity = ClampFallSpeed(_body.linearVelocity);
         }
 
+        // Yだけ切ると斜め落下の角度が変わる。上限を超えた分は向きを保ったまま全体を縮める。
         static Vector2 ClampFallSpeed(Vector2 velocity)
         {
-            velocity.y = Mathf.Max(velocity.y, -PlayerTuning.MaxFallSpeed);
-            return velocity;
+            float minY = -PlayerTuning.MaxFallSpeed;
+            if (velocity.y >= minY)
+            {
+                return velocity;
+            }
+
+            return velocity * (minY / velocity.y);
         }
 
         void OnCollisionEnter2D(Collision2D collision)
         {
+            if (_meilingPhase == MeilingControl.Pull || _meilingPhase == MeilingControl.Hold)
+            {
+                return;
+            }
+
             if (TryFinishDrop(collision))
             {
                 return;
             }
 
-            if (_body == null || _state != PlayerMoveState.Flying || _grace > 0f)
+            if (_body == null || !TryGetCollisionContact(collision, out ContactPoint2D contact))
             {
                 return;
             }
 
-            if (!TryGetCollisionContact(collision, out ContactPoint2D contact))
+            if (!IsFlightCollisionActive() || _grace > 0f)
             {
                 return;
             }
@@ -515,9 +688,19 @@ namespace Pulling
                 return;
             }
 
+            if (_meilingPhase == MeilingControl.Launch)
+            {
+                ReleaseMeilingToPhysics();
+            }
+
             bool isGround = normal.y >= PlayerTuning.GroundNormalMin;
             if (isGround && impactSpeed < PlayerTuning.LandSpeedThreshold)
             {
+                if (_state == PlayerMoveState.Aiming)
+                {
+                    return;
+                }
+
                 EnterStopped();
                 return;
             }
@@ -562,6 +745,12 @@ namespace Pulling
             TryFinishDrop(collision);
         }
 
+        bool IsFlightCollisionActive()
+        {
+            return _state == PlayerMoveState.Flying
+                   || (_state == PlayerMoveState.Aiming && _aimFromAir);
+        }
+
         float GetImpactSpeed(Vector2 normal)
         {
             return Mathf.Max(0f, -Vector2.Dot(_prePhysicsVelocity, normal));
@@ -602,7 +791,7 @@ namespace Pulling
 
         bool CanBeginAim()
         {
-            if (_settling)
+            if (IsMeilingControlled)
             {
                 return false;
             }
@@ -612,14 +801,33 @@ namespace Pulling
                 return true;
             }
 
-            return _state == PlayerMoveState.Flying
-                   && _grace <= 0f
-                   && _body.linearVelocity.magnitude < PlayerTuning.StopThreshold
+            if (_state != PlayerMoveState.Flying || _grace > 0f || _body == null)
+            {
+                return false;
+            }
+
+            if (_airJumpReady && !IsGrounded())
+            {
+                return true;
+            }
+
+            if (_settling)
+            {
+                return false;
+            }
+
+            return _body.linearVelocity.magnitude < PlayerTuning.StopThreshold
                    && IsGrounded();
         }
 
         void BeginAim(Vector2 world)
         {
+            _aimFromAir = _state == PlayerMoveState.Flying && !IsGrounded();
+            if (_aimFromAir)
+            {
+                _settling = false;
+            }
+
             _state = PlayerMoveState.Aiming;
             _aimStartWorld = world;
             Time.timeScale = PlayerTuning.LaunchTimeScale;
@@ -637,15 +845,17 @@ namespace Pulling
 
         void UpdateAim(Vector2 world)
         {
+            _aimLine?.ShowPullOrigin(_aimStartWorld, PlayerTuning.MaxPullDistance * 0.5f);
             Vector2 pullBack = ReadPull(world);
             if (pullBack.sqrMagnitude < 0.04f)
             {
-                _aimLine?.Hide();
+                _aimLine?.HideDirection();
                 return;
             }
 
             _lastAimDirection = -pullBack.normalized;
-            _aimLine?.ShowDirection(_body.position, _lastAimDirection);
+            float strength = pullBack.magnitude / PlayerTuning.MaxPullDistance;
+            _aimLine?.ShowDirection(_body.position, _lastAimDirection, strength);
         }
 
         void ReleaseAim(Vector2 world)
@@ -656,10 +866,13 @@ namespace Pulling
 
             if (pullBack.sqrMagnitude < 0.04f)
             {
-                EnterStopped();
+                AbortAim();
                 return;
             }
 
+            bool consumeAirJump = _aimFromAir && !IsGrounded();
+            _aimFromAir = false;
+            _settling = false;
             _body.constraints = RigidbodyConstraints2D.FreezeRotation;
             _body.WakeUp();
             Vector2 launchVel = ReadLaunchImpulse(pullBack) / Mathf.Max(0.01f, _body.mass);
@@ -670,11 +883,157 @@ namespace Pulling
             _state = PlayerMoveState.Flying;
             _grace = PlayerTuning.LaunchGrace;
             _lowSpeedFrames = 0;
+            if (consumeAirJump)
+            {
+                _airJumpReady = false;
+            }
+            else
+            {
+                _airJumpReady = true;
+                _airborneJumpReady = true;
+            }
         }
 
         void OnDisable()
         {
+            CancelMeilingMotion();
             Time.timeScale = 1f;
+        }
+
+        void ActivateMeiling()
+        {
+            if (_body == null || _locked)
+            {
+                return;
+            }
+
+            _meilingPhase = MeilingControl.Pull;
+            _meilingTime = 0f;
+            _meilingOrigin = _body.position;
+            _state = PlayerMoveState.Flying;
+            _settling = false;
+            _aimFromAir = false;
+            _grace = 0f;
+            _lowSpeedFrames = 0;
+            _body.constraints = RigidbodyConstraints2D.FreezeRotation;
+            _body.bodyType = RigidbodyType2D.Kinematic;
+            _body.linearVelocity = Vector2.zero;
+            _body.angularVelocity = 0f;
+            _internalVelocity = _meilingCenter - _meilingOrigin;
+            _prePhysicsVelocity = Vector2.zero;
+        }
+
+        void StepMeiling()
+        {
+            if (_body == null)
+            {
+                CancelMeilingMotion();
+                return;
+            }
+
+            float dt = Time.fixedDeltaTime;
+            _meilingTime += dt;
+            switch (_meilingPhase)
+            {
+                case MeilingControl.Pull:
+                    {
+                        float duration = Mathf.Max(0.01f, PlayerTuning.MeilingPullSeconds);
+                        float t = Mathf.Clamp01(_meilingTime / duration);
+                        Vector2 pos = Vector2.Lerp(_meilingOrigin, _meilingCenter, t);
+                        _internalVelocity = (pos - _body.position) / Mathf.Max(dt, 0.0001f);
+                        _body.MovePosition(pos);
+                        if (t >= 1f)
+                        {
+                            _meilingPhase = MeilingControl.Hold;
+                            _meilingTime = 0f;
+                        }
+
+                        break;
+                    }
+                case MeilingControl.Hold:
+                    {
+                        _internalVelocity = Vector2.zero;
+                        _body.MovePosition(_meilingCenter);
+                        if (_meilingTime >= PlayerTuning.MeilingHoldSeconds)
+                        {
+                            BeginMeilingLaunch();
+                        }
+
+                        break;
+                    }
+                case MeilingControl.Launch:
+                    {
+                        _internalVelocity = _meilingVelocity;
+                        _prePhysicsVelocity = _meilingVelocity;
+                        _body.gravityScale = 0f;
+                        _body.linearDamping = 0f;
+                        _body.linearVelocity = _meilingVelocity;
+                        if (_meilingTime >= PlayerTuning.MeilingLaunchSeconds)
+                        {
+                            EndMeilingLaunch();
+                        }
+
+                        break;
+                    }
+            }
+        }
+
+        void BeginMeilingLaunch()
+        {
+            _meilingPhase = MeilingControl.Launch;
+            _meilingTime = 0f;
+            _body.bodyType = RigidbodyType2D.Dynamic;
+            _body.constraints = RigidbodyConstraints2D.FreezeRotation;
+            _body.gravityScale = 0f;
+            _body.linearDamping = 0f;
+            _internalVelocity = _meilingVelocity;
+            _prePhysicsVelocity = _meilingVelocity;
+            _body.linearVelocity = _meilingVelocity;
+            _body.WakeUp();
+            _state = PlayerMoveState.Flying;
+            _grace = 0f;
+            _lowSpeedFrames = 0;
+        }
+
+        void EndMeilingLaunch()
+        {
+            _meilingPhase = MeilingControl.None;
+            if (_body != null && _body.bodyType != RigidbodyType2D.Dynamic)
+            {
+                _body.bodyType = RigidbodyType2D.Dynamic;
+            }
+
+            _internalVelocity = _meilingVelocity;
+            _prePhysicsVelocity = _meilingVelocity;
+            _state = PlayerMoveState.Flying;
+            _grace = PlayerTuning.LaunchGrace;
+            _lowSpeedFrames = 0;
+            ApplyActualVelocity();
+        }
+
+        void ReleaseMeilingToPhysics()
+        {
+            _meilingPhase = MeilingControl.None;
+            if (_body != null && _body.bodyType != RigidbodyType2D.Dynamic)
+            {
+                _body.bodyType = RigidbodyType2D.Dynamic;
+            }
+
+            _internalVelocity = _meilingVelocity;
+            _prePhysicsVelocity = _meilingVelocity;
+            _state = PlayerMoveState.Flying;
+            _grace = 0f;
+            _lowSpeedFrames = 0;
+        }
+
+        void CancelMeilingMotion()
+        {
+            _meilingPending = false;
+            _meilingPhase = MeilingControl.None;
+            if (_body != null && _body.bodyType != RigidbodyType2D.Dynamic)
+            {
+                _body.bodyType = RigidbodyType2D.Dynamic;
+            }
         }
 
         static Vector2 IntegrateFlightVelocity(Vector2 velocity, Vector2 gravity, float damping, float dt)
@@ -705,8 +1064,29 @@ namespace Pulling
             Time.timeScale = 1f;
             if (_state == PlayerMoveState.Aiming)
             {
-                EnterStopped();
+                AbortAim();
             }
+        }
+
+        void AbortAim()
+        {
+            if (_aimFromAir && !IsGrounded())
+            {
+                _aimFromAir = false;
+                _pointerHeld = false;
+                _settling = false;
+                _state = PlayerMoveState.Flying;
+                if (_body != null)
+                {
+                    _body.constraints = RigidbodyConstraints2D.FreezeRotation;
+                    ApplyActualVelocity();
+                }
+
+                return;
+            }
+
+            _aimFromAir = false;
+            EnterStopped();
         }
 
         void EnterStopped()
@@ -716,6 +1096,9 @@ namespace Pulling
                 _lastSafePosition = _body.position;
             }
 
+            _airJumpReady = true;
+            _airborneJumpReady = false;
+            _aimFromAir = false;
             Freeze();
         }
 
@@ -733,7 +1116,9 @@ namespace Pulling
                 return;
             }
 
+            _body.bodyType = RigidbodyType2D.Dynamic;
             _body.constraints = RigidbodyConstraints2D.FreezeRotation;
+            _body.sleepMode = RigidbodySleepMode2D.NeverSleep;
             _internalVelocity = Vector2.zero;
             _prePhysicsVelocity = Vector2.zero;
             RestoreBodyFlightForces();
@@ -756,34 +1141,6 @@ namespace Pulling
             }
 
             return true;
-        }
-
-        bool HasSupportBelow()
-        {
-            if (_collider == null)
-            {
-                return true;
-            }
-
-            float scale = Mathf.Abs(transform.lossyScale.x);
-            float radius = _collider.radius * scale;
-            Vector2 origin = _body != null ? _body.position : (Vector2)transform.position;
-            var hits = Physics2D.CircleCastAll(origin, radius * 0.9f, Vector2.down, SpawnSupportProbe);
-            for (int i = 0; i < hits.Length; i++)
-            {
-                var hit = hits[i];
-                if (hit.collider == null || hit.collider == _collider || hit.collider.isTrigger)
-                {
-                    continue;
-                }
-
-                if (hit.normal.y >= PlayerTuning.GroundNormalMin)
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         bool TryReadPointer(out Vector2 screen, out bool pressedThisFrame, out bool releasedThisFrame, out bool held)
@@ -882,31 +1239,104 @@ namespace Pulling
 
         void RefreshAppearance()
         {
-            if (_normalSprite == null)
+            if (_remiria == null)
             {
                 return;
             }
 
             EnsureVisual();
-            Sprite sprite = _normalSprite;
-            if (_state == PlayerMoveState.Aiming && _jumpWaitSprite != null)
+            Vector2 face = FacingDirection();
+            Sprite sprite;
+            if (_state == PlayerMoveState.Aiming)
             {
-                sprite = _jumpWaitSprite;
+                sprite = SideSprite(_remiria.stanceLeft, _remiria.stanceRight, face);
             }
-            else if (_state == PlayerMoveState.Flying && _jumpSprite != null)
+            else if (_state == PlayerMoveState.Flying)
             {
-                sprite = _jumpSprite;
+                sprite = FlightSprite(face);
+            }
+            else
+            {
+                sprite = SideSprite(_remiria.normalLeft, _remiria.normalRight, face);
             }
 
-            Vector2 face = FacingDirection();
-            if (Mathf.Abs(face.x) > 0.2f)
+            if (sprite == null)
             {
-                _faceLeft = face.x < 0f;
+                return;
             }
 
             _visual.sprite = sprite;
-            _visual.flipX = _faceLeft;
+            _visual.flipX = false;
+            _visual.flipY = false;
+            if (CanBreakBlocks())
+            {
+                _visual.color = new Color(1f, 0.25f, 0.25f, 1f);
+            }
+            else if (IsSunImmune)
+            {
+                _visual.color = new Color(1f, 0.9f, 0.45f, 1f);
+            }
+            else
+            {
+                _visual.color = Color.white;
+            }
             AlignVisual(sprite);
+            _airJumpOutline.Apply(_visual, _airJumpReady && _airborneJumpReady && !IsGrounded());
+        }
+
+        bool CanBreakBlocks()
+        {
+            return _state == PlayerMoveState.Flying
+                   && _internalVelocity.magnitude >= PlayerTuning.BreakableWeakSpeed;
+        }
+
+        Sprite FlightSprite(Vector2 velocity)
+        {
+            if (_settling || velocity.sqrMagnitude <= PlayerTuning.FallPoseSpeed * PlayerTuning.FallPoseSpeed)
+            {
+                return SideSprite(_remiria.fallLeft, _remiria.fallRight, velocity);
+            }
+
+            if (_flightPoses == null || _flightPoses.Length == 0)
+            {
+                RebuildFlightPoses();
+            }
+
+            Vector2 direction = velocity.normalized;
+            Sprite best = null;
+            float bestDot = float.NegativeInfinity;
+            for (int i = 0; i < _flightPoses.Length; i++)
+            {
+                Sprite candidate = _flightPoses[i].Sprite;
+                if (candidate == null)
+                {
+                    continue;
+                }
+
+                float dot = Vector2.Dot(direction, _flightPoses[i].Direction);
+                if (dot > bestDot)
+                {
+                    bestDot = dot;
+                    best = candidate;
+                }
+            }
+
+            return best != null ? best : SideSprite(_remiria.fallLeft, _remiria.fallRight, velocity);
+        }
+
+        Sprite SideSprite(Sprite left, Sprite right, Vector2 direction)
+        {
+            if (Mathf.Abs(direction.x) > 0.2f)
+            {
+                _faceLeft = direction.x < 0f;
+            }
+
+            if (_faceLeft)
+            {
+                return left != null ? left : right;
+            }
+
+            return right != null ? right : left;
         }
 
         Vector2 FacingDirection()
@@ -929,15 +1359,13 @@ namespace Pulling
 
         void EnsureVisual()
         {
-            if (_visual != null)
+            if (_visual == null)
             {
-                return;
-            }
-
-            var existing = transform.Find("Visual");
-            if (existing != null)
-            {
-                _visual = existing.GetComponent<SpriteRenderer>();
+                var existing = transform.Find("Visual");
+                if (existing != null)
+                {
+                    _visual = existing.GetComponent<SpriteRenderer>();
+                }
             }
 
             if (_visual == null)
@@ -949,6 +1377,8 @@ namespace Pulling
 
             _visual.sortingOrder = 5;
             var root = GetComponent<SpriteRenderer>();
+            Material template = root != null && root != _visual ? root.sharedMaterial : null;
+            SpriteFactory.AssignPipelineMaterial(_visual, template);
             if (root != null && root != _visual)
             {
                 root.enabled = false;
@@ -962,19 +1392,17 @@ namespace Pulling
                 return;
             }
 
-            float parentScale = Mathf.Abs(transform.lossyScale.y);
-            if (parentScale < 0.0001f)
-            {
-                parentScale = 1f;
-            }
-
-            float spriteHeight = sprite.bounds.size.y;
-            float localScale = spriteHeight > 0.001f ? VisualHeight / (spriteHeight * parentScale) : 1f;
+            float pixelsPerUnit = sprite.pixelsPerUnit > 0.001f ? sprite.pixelsPerUnit : 100f;
+            float imagePixels = Mathf.Max(sprite.texture.width, sprite.texture.height);
+            float diameter = _collider != null ? _collider.radius * 2f : 0.84f;
+            float imageUnits = imagePixels / pixelsPerUnit;
+            float localScale = imageUnits > 0.001f ? diameter / (imageUnits * BodyToImage) : 1f;
             _visual.transform.localScale = new Vector3(localScale, localScale, 1f);
-            float centerX = sprite.bounds.center.x * localScale;
-            float centerY = sprite.bounds.center.y * localScale;
-            float x = _visual.flipX ? centerX : -centerX;
-            _visual.transform.localPosition = new Vector3(x, -centerY, 0f);
+
+            Rect rect = sprite.textureRect;
+            Vector2 canvasCenter = new Vector2(sprite.texture.width, sprite.texture.height) * 0.5f;
+            Vector2 offset = (rect.center - canvasCenter) / pixelsPerUnit * localScale;
+            _visual.transform.localPosition = new Vector3(offset.x, offset.y, 0f);
         }
     }
 }

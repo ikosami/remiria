@@ -7,7 +7,7 @@ namespace Pulling
 {
     public class StageTransition : MonoBehaviour
     {
-        public float fadeSeconds = 2f;
+        public float fadeSeconds = 1f;
         Image _overlay;
 
         public void Bind(Image overlay)

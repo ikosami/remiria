@@ -15,10 +15,19 @@ namespace Pulling
                 case TileIds.SlopeNW: return CreateSlope(SlopeVariant.NW, color, size);
                 case TileIds.SlopeSE: return CreateSlope(SlopeVariant.SE, color, size);
                 case TileIds.SlopeSW: return CreateSlope(SlopeVariant.SW, color, size);
+                case TileIds.MirrorNE: return CreateMirrorSlope(SlopeVariant.NE, color, size);
+                case TileIds.MirrorNW: return CreateMirrorSlope(SlopeVariant.NW, color, size);
+                case TileIds.MirrorSE: return CreateMirrorSlope(SlopeVariant.SE, color, size);
+                case TileIds.MirrorSW: return CreateMirrorSlope(SlopeVariant.SW, color, size);
                 case TileIds.Breakable: return CreateCracked(color, size);
                 case TileIds.BreakableStrong: return CreateSturdy(color, size);
+                case TileIds.Bomb: return CreateBomb(color, size);
+                case TileIds.BlastWall: return CreateBlastWall(color, size);
+                case TileIds.Switch: return CreateSwitch(color, size, false);
+                case TileIds.SwitchToggle: return CreateSwitch(color, size, true);
+                case TileIds.SwitchLight: return CreateLightSensor(color, size);
+                case TileIds.Door: return CreateDoor(color, size);
                 case TileIds.OneWay: return CreateOneWay(color, size);
-                case TileIds.Mirror: return CreateMirror(color, size);
                 case TileIds.Sunlight: return CreateSunlight(color, size);
                 case TileIds.Bullet: return CreateCircle(color, size);
                 case TileIds.Fran:
@@ -30,6 +39,7 @@ namespace Pulling
                 case TileIds.HighBounce: return CreateHighBounce(color, size);
                 case TileIds.EnemyWeak:
                 case TileIds.EnemyMid:
+                case TileIds.EnemyHeavy:
                 case TileIds.EnemyBoss: return CreateSolid(color, size);
                 default: return CreateSolid(color, size);
             }
@@ -43,6 +53,7 @@ namespace Pulling
                    || tileId == TileIds.Sakuya
                    || tileId == TileIds.EnemyWeak
                    || tileId == TileIds.EnemyMid
+                   || tileId == TileIds.EnemyHeavy
                    || tileId == TileIds.EnemyBoss;
         }
 
@@ -329,6 +340,46 @@ namespace Pulling
             }
         }
 
+        public static Sprite CreateMirrorSlope(SlopeVariant variant, Color color, int size = 32)
+        {
+            string key = $"mirrorslope:{variant}:{color}:{size}";
+            if (Cache.TryGetValue(key, out var cached) && cached != null)
+            {
+                return cached;
+            }
+
+            var shine = new Color(0.97f, 0.99f, 1f, 1f);
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                filterMode = FilterMode.Point,
+                wrapMode = TextureWrapMode.Clamp,
+                name = key
+            };
+
+            int last = size - 1;
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    bool fill = IsSlopeFill(variant, x, y, last);
+                    bool onEdge = IsSlopeEdge(variant, x, y, last);
+                    if (!fill && !onEdge)
+                    {
+                        tex.SetPixel(x, y, Color.clear);
+                        continue;
+                    }
+
+                    tex.SetPixel(x, y, onEdge ? shine : color);
+                }
+            }
+
+            tex.Apply();
+            var sprite = Sprite.Create(tex, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), size);
+            sprite.name = key;
+            Cache[key] = sprite;
+            return sprite;
+        }
+
         public static Sprite CreateOneWay(Color color, int size = 32)
         {
             string key = $"oneway:{color}:{size}";
@@ -358,28 +409,6 @@ namespace Pulling
                     {
                         tex.SetPixel(x, y, Color.clear);
                     }
-                }
-            }
-
-            return Finish(tex, key, size);
-        }
-
-        public static Sprite CreateMirror(Color color, int size = 32)
-        {
-            string key = $"mirror:{color}:{size}";
-            if (Cache.TryGetValue(key, out var cached) && cached != null)
-            {
-                return cached;
-            }
-
-            var shine = new Color(0.95f, 0.98f, 1f, 1f);
-            var tex = CreateTexture(key, size);
-            for (int y = 0; y < size; y++)
-            {
-                for (int x = 0; x < size; x++)
-                {
-                    bool stripe = (x + y) % 4 == 0;
-                    tex.SetPixel(x, y, stripe ? shine : color);
                 }
             }
 
@@ -483,6 +512,350 @@ namespace Pulling
                     bool sparkle = (x == size / 4 && y == size * 3 / 4)
                                    || (x == size * 3 / 4 && y == size / 4);
                     tex.SetPixel(x, y, sparkle ? highlight : color);
+                }
+            }
+
+            return Finish(tex, key, size);
+        }
+
+        static Material _pipelineMaterial;
+
+        public static void AssignPipelineMaterial(SpriteRenderer renderer, Material template = null)
+        {
+            if (renderer == null)
+            {
+                return;
+            }
+
+            Material material = template != null ? template : PipelineMaterial();
+            if (material != null)
+            {
+                renderer.sharedMaterial = material;
+            }
+        }
+
+        static Material PipelineMaterial()
+        {
+            if (_pipelineMaterial != null)
+            {
+                return _pipelineMaterial;
+            }
+
+            var renderers = Object.FindObjectsByType<SpriteRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Material shared = renderers[i].sharedMaterial;
+                if (shared == null || shared.shader == null)
+                {
+                    continue;
+                }
+
+                if (shared.shader.name.Contains("Universal Render Pipeline/2D/Sprite"))
+                {
+                    _pipelineMaterial = shared;
+                    return _pipelineMaterial;
+                }
+            }
+
+            Shader shader = Shader.Find("Universal Render Pipeline/2D/Sprite-Lit-Default");
+            if (shader == null)
+            {
+                shader = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default");
+            }
+
+            if (shader == null)
+            {
+                return null;
+            }
+
+            _pipelineMaterial = new Material(shader)
+            {
+                name = "Pipeline Sprite (runtime)",
+                hideFlags = HideFlags.HideAndDontSave
+            };
+            return _pipelineMaterial;
+        }
+
+        public static Sprite CreateLightSensor(Color color, int size = 32)
+        {
+            string key = $"light-sensor:v2:{color}:{size}";
+            if (Cache.TryGetValue(key, out var cached) && cached != null)
+            {
+                return cached;
+            }
+
+            var bracket = new Color(color.r, color.g, color.b, 1f);
+            var ray = new Color(1f, 0.9f, 0.28f, 1f);
+            var ring = new Color(1f, 0.95f, 0.45f, 1f);
+            var core = new Color(1f, 0.99f, 0.72f, 1f);
+            var tex = CreateTexture(key, size);
+            float center = (size - 1) * 0.5f;
+            float arm = size * 0.34f;
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = x - center;
+                    float dy = y - center;
+                    float dist = Mathf.Sqrt(dx * dx + dy * dy);
+                    bool left = x >= 1 && x < 4;
+                    bool right = x >= size - 4 && x < size - 1;
+                    bool bottom = y >= 1 && y < 4;
+                    bool top = y >= size - 4 && y < size - 1;
+                    bool inwardX = x >= 1 && x < size - 1 && (x < arm || x >= size - arm);
+                    bool inwardY = y >= 1 && y < size - 1 && (y < arm || y >= size - arm);
+                    bool bracketPixel = (top || bottom) && inwardX || (left || right) && inwardY;
+                    bool rayPixel = dist > size * 0.32f && dist < size * 0.44f
+                                    && (Mathf.Abs(dx) <= 1.2f || Mathf.Abs(dy) <= 1.2f);
+                    bool ringPixel = dist >= size * 0.16f && dist <= size * 0.3f;
+                    bool corePixel = dist <= size * 0.1f;
+                    Color pixel = Color.clear;
+                    if (bracketPixel)
+                    {
+                        pixel = bracket;
+                    }
+
+                    if (rayPixel)
+                    {
+                        pixel = ray;
+                    }
+
+                    if (ringPixel)
+                    {
+                        pixel = ring;
+                    }
+
+                    if (corePixel)
+                    {
+                        pixel = core;
+                    }
+
+                    tex.SetPixel(x, y, pixel);
+                }
+            }
+
+            return Finish(tex, key, size);
+        }
+
+        public static Sprite CreateSwitch(Color color, int size = 32, bool toggle = false)
+        {
+            string key = $"switch:v3:{toggle}:{color}:{size}";
+            if (Cache.TryGetValue(key, out var cached) && cached != null)
+            {
+                return cached;
+            }
+
+            var plate = new Color(color.r * 0.45f, color.g * 0.45f, color.b * 0.45f, 1f);
+            var cap = new Color(Mathf.Min(1f, color.r + 0.12f), Mathf.Min(1f, color.g + 0.08f), Mathf.Min(1f, color.b + 0.08f), 1f);
+            var shine = new Color(1f, 0.92f, 0.88f, 1f);
+            var tex = CreateTexture(key, size);
+            float center = (size - 1) * 0.5f;
+            float radius = size * 0.26f;
+            Vector2 hub = new Vector2(center, size * 0.30f);
+            Vector2 tip = hub + new Vector2(-Mathf.Sin(38f * Mathf.Deg2Rad), Mathf.Cos(38f * Mathf.Deg2Rad)) * (size * 0.42f);
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    bool frame = x < 2 || y < 2 || x >= size - 2 || y >= size - 2;
+                    float dist = Vector2.Distance(new Vector2(x, y), toggle ? hub : new Vector2(center, center));
+                    bool handle = toggle && (DistToSegment(x, y, hub.x, hub.y, tip.x, tip.y) <= 1.6f
+                                              || Vector2.Distance(new Vector2(x, y), tip) <= size * 0.09f);
+                    bool hubDot = toggle && dist <= size * 0.07f;
+                    if (!toggle && dist <= radius)
+                    {
+                        bool highlight = x > center - radius * 0.2f && y > center && dist < radius * 0.72f;
+                        tex.SetPixel(x, y, highlight ? shine : cap);
+                    }
+                    else if (handle || hubDot)
+                    {
+                        tex.SetPixel(x, y, cap);
+                    }
+                    else
+                    {
+                        tex.SetPixel(x, y, frame ? plate : color);
+                    }
+                }
+            }
+
+            return Finish(tex, key, size);
+        }
+
+        public static Sprite CreateLeverBase(Color color, int size = 32)
+        {
+            string key = $"lever-base:{color}:{size}";
+            if (Cache.TryGetValue(key, out var cached) && cached != null)
+            {
+                return cached;
+            }
+
+            var plate = new Color(color.r * 0.45f, color.g * 0.45f, color.b * 0.45f, 1f);
+            var hub = new Color(color.r * 0.25f, color.g * 0.25f, color.b * 0.25f, 1f);
+            var tex = CreateTexture(key, size);
+            float center = (size - 1) * 0.5f;
+            Vector2 pivot = new Vector2(center, size * 0.30f);
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    bool frame = x < 2 || y < 2 || x >= size - 2 || y >= size - 2;
+                    bool pin = Vector2.Distance(new Vector2(x, y), pivot) <= size * 0.07f;
+                    tex.SetPixel(x, y, pin ? hub : frame ? plate : color);
+                }
+            }
+
+            return Finish(tex, key, size);
+        }
+
+        public static Sprite CreateLeverHandle(Color color)
+        {
+            string key = $"lever-handle:{color}";
+            if (Cache.TryGetValue(key, out var cached) && cached != null)
+            {
+                return cached;
+            }
+
+            const int width = 6;
+            const int height = 16;
+            var cap = new Color(Mathf.Min(1f, color.r + 0.18f), Mathf.Min(1f, color.g + 0.16f), Mathf.Min(1f, color.b + 0.12f), 1f);
+            var edge = new Color(color.r * 0.35f, color.g * 0.35f, color.b * 0.35f, 1f);
+            var tex = new Texture2D(width, height, TextureFormat.RGBA32, false)
+            {
+                filterMode = FilterMode.Point,
+                wrapMode = TextureWrapMode.Clamp,
+                name = key
+            };
+
+            Vector2 tip = new Vector2((width - 1) * 0.5f, height - 3f);
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    bool bar = x >= 2 && x <= 3 && y >= 1 && y <= height - 4;
+                    bool knob = Vector2.Distance(new Vector2(x, y), tip) <= 2.2f;
+                    if (bar || knob)
+                    {
+                        tex.SetPixel(x, y, knob ? Color.Lerp(cap, Color.white, 0.35f) : edge);
+                    }
+                    else
+                    {
+                        tex.SetPixel(x, y, Color.clear);
+                    }
+                }
+            }
+
+            tex.Apply();
+            var sprite = Sprite.Create(tex, new Rect(0f, 0f, width, height), new Vector2(0.5f, 0f), 32f);
+            sprite.name = key;
+            Cache[key] = sprite;
+            return sprite;
+        }
+
+        public static Sprite CreateDoor(Color color, int size = 32)
+        {
+            string key = $"door:{color}:{size}";
+            if (Cache.TryGetValue(key, out var cached) && cached != null)
+            {
+                return cached;
+            }
+
+            var frame = new Color(color.r * 0.42f, color.g * 0.42f, color.b * 0.5f, 1f);
+            var bar = new Color(0.72f, 0.58f, 0.28f, 1f);
+            var gap = new Color(color.r * 0.2f, color.g * 0.22f, color.b * 0.28f, 1f);
+            var tex = CreateTexture(key, size);
+            int mid = size / 2;
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    bool border = x < 3 || y < 3 || x >= size - 3 || y >= size - 3;
+                    bool seam = Mathf.Abs(x - mid) <= 1;
+                    bool brace = y > size * 0.42f && y < size * 0.58f && x >= 3 && x < size - 3;
+                    if (border || seam)
+                    {
+                        tex.SetPixel(x, y, frame);
+                    }
+                    else if (brace)
+                    {
+                        tex.SetPixel(x, y, bar);
+                    }
+                    else if ((x / 4) % 2 == 0)
+                    {
+                        tex.SetPixel(x, y, gap);
+                    }
+                    else
+                    {
+                        tex.SetPixel(x, y, color);
+                    }
+                }
+            }
+
+            return Finish(tex, key, size);
+        }
+
+        public static Sprite CreateBomb(Color color, int size = 32)
+        {
+            string key = $"bomb:{color}:{size}";
+            if (Cache.TryGetValue(key, out var cached) && cached != null)
+            {
+                return cached;
+            }
+
+            var tex = CreateTexture(key, size);
+            var edge = new Color(color.r * 0.28f, color.g * 0.28f, color.b * 0.28f, 1f);
+            var hot = new Color(1f, 0.78f, 0.22f, 1f);
+            var core = new Color(1f, 0.96f, 0.82f, 1f);
+            Vector2 center = new Vector2((size - 1) * 0.5f, (size - 1) * 0.5f);
+            float hotRadius = size * 0.22f;
+            float coreRadius = size * 0.1f;
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    bool border = x < 2 || y < 2 || x >= size - 2 || y >= size - 2;
+                    float dist = Vector2.Distance(new Vector2(x, y), center);
+                    Color pixel = border ? edge : color;
+                    if (dist <= coreRadius)
+                    {
+                        pixel = core;
+                    }
+                    else if (dist <= hotRadius)
+                    {
+                        pixel = hot;
+                    }
+
+                    tex.SetPixel(x, y, pixel);
+                }
+            }
+
+            return Finish(tex, key, size);
+        }
+
+        public static Sprite CreateBlastWall(Color color, int size = 32)
+        {
+            string key = $"blastwall:{color}:{size}";
+            if (Cache.TryGetValue(key, out var cached) && cached != null)
+            {
+                return cached;
+            }
+
+            var tex = CreateTexture(key, size);
+            var edge = new Color(color.r * 0.45f, color.g * 0.45f, color.b * 0.45f, 1f);
+            var mortar = new Color(color.r * 0.72f, color.g * 0.72f, color.b * 0.72f, 1f);
+            int course = Mathf.Max(1, size / 3);
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    bool border = x < 2 || y < 2 || x >= size - 2 || y >= size - 2;
+                    bool seam = y % course == 0 || (x + (y / course) * (size / 2)) % size == 0;
+                    Color pixel = seam ? mortar : color;
+                    if (border)
+                    {
+                        pixel = edge;
+                    }
+
+                    tex.SetPixel(x, y, pixel);
                 }
             }
 

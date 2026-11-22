@@ -31,28 +31,34 @@ namespace Pulling
             }
 
             var edge = GetComponent<EdgeCollider2D>();
-            if (edge == null)
+            if (edge != null)
             {
-                edge = gameObject.AddComponent<EdgeCollider2D>();
+                Destroy(edge);
             }
 
-            float h = _cellSize * 0.5f;
+            var polygon = GetComponent<PolygonCollider2D>();
+            if (polygon == null)
+            {
+                polygon = gameObject.AddComponent<PolygonCollider2D>();
+            }
+
+            polygon.pathCount = 1;
+            polygon.SetPath(0, Triangle(_cellSize * 0.5f));
+        }
+
+        Vector2[] Triangle(float h)
+        {
             switch (variant)
             {
                 case SlopeVariant.NE:
-                    edge.points = new[] { new Vector2(-h, -h), new Vector2(h, h) };
-                    break;
+                    return new[] { new Vector2(-h, -h), new Vector2(h, -h), new Vector2(h, h) };
                 case SlopeVariant.NW:
-                    edge.points = new[] { new Vector2(-h, h), new Vector2(h, -h) };
-                    break;
+                    return new[] { new Vector2(-h, h), new Vector2(-h, -h), new Vector2(h, -h) };
                 case SlopeVariant.SE:
-                    edge.points = new[] { new Vector2(-h, h), new Vector2(h, -h) };
-                    break;
-                case SlopeVariant.SW:
-                    edge.points = new[] { new Vector2(-h, -h), new Vector2(h, h) };
-                    break;
+                    return new[] { new Vector2(h, -h), new Vector2(h, h), new Vector2(-h, h) };
+                default:
+                    return new[] { new Vector2(-h, h), new Vector2(-h, -h), new Vector2(h, h) };
             }
         }
     }
 }
-

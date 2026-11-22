@@ -13,6 +13,5 @@ MonoBehaviour:
   m_Name: StageCatalog
   m_EditorClassIdentifier: Pulling.StageCatalog
   stages:
-  - {fileID: 11400000, guid: c4e8a91b6d2f4703a5b8e1c90d4f6a27, type: 2}
   - {fileID: 11400000, guid: 0102030405060708090a0b0c0d0e0f10, type: 2}
   - {fileID: 11400000, guid: 66b65703533552945ad6a3c1be2e31bc, type: 2}

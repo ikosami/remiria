@@ -12,6 +12,7 @@ namespace Pulling
         public bool hasCollider;
         public bool isTrigger;
         public Sprite sprite;
+        public Sprite damagedSprite;
         public GameObject prefab;
     }
 }

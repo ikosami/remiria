@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace Pulling
@@ -14,12 +15,15 @@ namespace Pulling
         float _speedThreshold = PlayerTuning.BreakableWeakSpeed;
         BoxCollider2D _collider;
         SpriteRenderer _renderer;
+        Sprite _intactSprite;
+        Sprite _damagedSprite;
         PlayerController _player;
         Collider2D _playerCollider;
+        Action<int, int> _onBroken;
 
         public float MinImpactSpeed => _speedThreshold;
 
-        public void Bind(GridMapBuilder builder, int x, int y, float speedThreshold = -1f, int hitsToBreak = 1)
+        public void Bind(GridMapBuilder builder, int x, int y, float speedThreshold = -1f, int hitsToBreak = 1, Sprite damagedSprite = null, Action<int, int> onBroken = null)
         {
             _builder = builder;
             _x = x;
@@ -27,12 +31,24 @@ namespace Pulling
             _broken = false;
             _awaitSeparation = false;
             _hitsLeft = Mathf.Max(1, hitsToBreak);
+            _damagedSprite = damagedSprite;
+            _onBroken = onBroken;
             if (speedThreshold >= 0f)
             {
                 _speedThreshold = speedThreshold;
             }
 
             CacheCollider();
+            if (_renderer == null)
+            {
+                _renderer = GetComponent<SpriteRenderer>();
+            }
+
+            if (_renderer != null)
+            {
+                _intactSprite = _renderer.sprite;
+            }
+
             if (_hitsLeft > 1)
             {
                 ApplySprite(false);
@@ -195,9 +211,12 @@ namespace Pulling
                 return;
             }
 
-            _renderer.sprite = fractured
-                ? SpriteFactory.CreateFractured(_renderer.color)
-                : SpriteFactory.CreateSturdy(_renderer.color);
+            Sprite next = fractured ? _damagedSprite : _intactSprite;
+            if (next != null)
+            {
+                _renderer.sprite = next;
+                TileSprites.FitToCell(_renderer.transform, next, _builder != null ? _builder.CellSize : 1f);
+            }
         }
 
         void ReleaseIfSeparated()
@@ -236,6 +255,8 @@ namespace Pulling
             {
                 Destroy(gameObject);
             }
+
+            _onBroken?.Invoke(_x, _y);
         }
 
         void CacheCollider()
