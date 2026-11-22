@@ -43,6 +43,8 @@ namespace Pulling
         const float PaletteCellHeight = 72f;
         const float PaletteCellSpacing = 8f;
         const int PaletteContentPad = 8;
+        const string PaletteSideKey = "pulling.editor.palette.right";
+        const string PaletteWideKey = "pulling.editor.palette.wide";
 
         public bool IsOverlayOpen =>
             (settingsPanel != null && settingsPanel.activeSelf)
@@ -55,6 +57,7 @@ namespace Pulling
         bool _settingsPrepared;
         bool _paletteOnRight;
         bool _paletteThreeColumns;
+        bool _palettePrefsLoaded;
         bool _paletteChromeReady;
         RectTransform _dockTriangle;
         RectTransform _columnTriangleLeft;
@@ -163,14 +166,35 @@ namespace Pulling
         void OnPaletteDockClicked()
         {
             _paletteOnRight = !_paletteOnRight;
+            SavePalettePrefs();
             ApplyPaletteFrame();
         }
 
         void OnPaletteColumnsClicked()
         {
             _paletteThreeColumns = !_paletteThreeColumns;
+            SavePalettePrefs();
             ApplyPaletteFrame();
             ScrollPaletteToTop();
+        }
+
+        void LoadPalettePrefs()
+        {
+            if (_palettePrefsLoaded)
+            {
+                return;
+            }
+
+            _paletteOnRight = PlayerPrefs.GetInt(PaletteSideKey, 0) != 0;
+            _paletteThreeColumns = PlayerPrefs.GetInt(PaletteWideKey, 0) != 0;
+            _palettePrefsLoaded = true;
+        }
+
+        void SavePalettePrefs()
+        {
+            PlayerPrefs.SetInt(PaletteSideKey, _paletteOnRight ? 1 : 0);
+            PlayerPrefs.SetInt(PaletteWideKey, _paletteThreeColumns ? 1 : 0);
+            PlayerPrefs.Save();
         }
 
         public void RefreshSettings(string stageId, int currentWidth)
@@ -773,6 +797,7 @@ namespace Pulling
 
             EnsureVerticalList();
             _paletteChromeReady = _paletteDockButton != null && _paletteColumnsButton != null;
+            LoadPalettePrefs();
             ApplyPaletteFrame();
         }
 

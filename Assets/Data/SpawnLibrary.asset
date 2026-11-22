@@ -15,7 +15,6 @@ MonoBehaviour:
   blastFlash: {fileID: 100023, guid: 96aaf885f67c4ca4b8fcf45d224c8559, type: 3}
   enemyShot: {fileID: 100004, guid: 9c1d2815edd546a38dbd8c75f30405e7, type: 3}
   enemyLaser: {fileID: 100008, guid: ea11e465be4842efb2a515cf550c4496, type: 3}
-  healthVignette: {fileID: 100073, guid: 636e802c79fb4034a2017900a32516ee, type: 3}
   eventSystem: {fileID: 0}
   tileLabel: {fileID: 100078, guid: cae3ddce0d0841fda52c8b69078d2a16, type: 3}
   playerVisual: {fileID: 100011, guid: 30f4b138fc3a4f27a2d3202b9ea3b902, type: 3}

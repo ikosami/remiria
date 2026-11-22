@@ -682,17 +682,17 @@ namespace Pulling
                     break;
                 case TileIds.EnemyMid:
                     piece.bounce.Bind(def.id, TileBounceTable.GetBounciness(def.id));
-                    piece.enemy.Bind(this, x, y, 2, EnemyAttack.ThreeWay);
+                    piece.enemy.Bind(this, x, y, 1, EnemyAttack.ThreeWay);
                     _enemies.Add(piece.enemy);
                     break;
                 case TileIds.EnemyHeavy:
                     piece.bounce.Bind(def.id, TileBounceTable.GetBounciness(def.id));
-                    piece.enemy.Bind(this, x, y, 2, EnemyAttack.Heavy);
+                    piece.enemy.Bind(this, x, y, 1, EnemyAttack.Heavy);
                     _enemies.Add(piece.enemy);
                     break;
                 case TileIds.EnemyBoss:
                     piece.bounce.Bind(def.id, TileBounceTable.GetBounciness(def.id));
-                    piece.enemy.Bind(this, x, y, 5, EnemyAttack.Laser);
+                    piece.enemy.Bind(this, x, y, 1, EnemyAttack.Laser);
                     _enemies.Add(piece.enemy);
                     break;
                 case TileIds.Switch:

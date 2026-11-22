@@ -8,7 +8,6 @@ namespace Pulling
         public BlastFlash blastFlash;
         public EnemyShot enemyShot;
         public EnemyLaser enemyLaser;
-        public LowHealthVignette healthVignette;
         public GameObject eventSystem;
         public TileLabelView tileLabel;
         public SpriteRenderer playerVisual;

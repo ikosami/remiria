@@ -1079,7 +1079,7 @@ namespace Pulling
             try
             {
                 long ts = System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                string line = "{\"sessionId\":\"3c2781\",\"hypothesisId\":\"" + hypothesisId
+                string line = "{\"sessionId\":\"3c2781\",\"runId\":\"post-fix\",\"hypothesisId\":\"" + hypothesisId
                     + "\",\"location\":\"" + location + "\",\"message\":\"" + message
                     + "\",\"data\":" + dataJson + ",\"timestamp\":" + ts + "}\n";
                 System.IO.File.AppendAllText(@"c:\SubDrive\project\remiria\.cursor\debug-3c2781.log", line);

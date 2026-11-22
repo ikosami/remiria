@@ -58,7 +58,7 @@ namespace Pulling
             player.Bind(playerBody, playerCol, aimView, camera);
             player.BindMapBuilder(manager.mapBuilder);
             player.BindHpBar(FindHpFill());
-            player.BindHealthVignette(EnsureHealthVignette());
+            player.BindHealthVignette(FindHealthVignette());
 
             manager.stageCamera.Bind(camera, player.transform);
 
@@ -124,16 +124,21 @@ namespace Pulling
             return mask.GetComponent<Image>();
         }
 
-        static LowHealthVignette EnsureHealthVignette()
+        static LowHealthVignette FindHealthVignette()
         {
             var canvas = GameObject.Find("GameCanvas");
             if (canvas == null)
             {
+                Debug.LogWarning("GameCanvas が見つかりません。");
                 return null;
             }
 
-            var vignette = SpawnLibrary.Spawn(SpawnLibrary.Current.healthVignette, canvas.transform);
-            vignette.transform.SetAsFirstSibling();
+            var vignette = canvas.GetComponentInChildren<LowHealthVignette>(true);
+            if (vignette == null)
+            {
+                Debug.LogWarning("HealthVignette が見つかりません。");
+            }
+
             return vignette;
         }
 
