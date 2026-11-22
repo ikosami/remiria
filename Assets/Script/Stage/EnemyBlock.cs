@@ -21,7 +21,8 @@ namespace Pulling
         float _cooldown;
         LaserStep _laserStep;
         Sprite _bulletSprite;
-        Collider2D _collider;
+        public Collider2D body;
+        readonly System.Collections.Generic.List<EnemyShot> _shots = new System.Collections.Generic.List<EnemyShot>();
         PlayerController _player;
         EnemyLaser _laser;
 
@@ -37,7 +38,6 @@ namespace Pulling
             _cooldown = attack == EnemyAttack.Laser
                 ? PlayerTuning.EnemyLaserPause
                 : 0.4f + ((x + y * 3) % 5) * 0.12f;
-            _collider = GetComponent<Collider2D>();
             var bullet = builder != null && builder.tileDatabase != null
                 ? builder.tileDatabase.Get(TileIds.Bullet)
                 : null;
@@ -52,28 +52,31 @@ namespace Pulling
         {
             if (_laser == null)
             {
-                var go = new GameObject("Laser");
-                go.transform.SetParent(transform, false);
-                _laser = go.AddComponent<EnemyLaser>();
+                _laser = SpawnLibrary.Spawn(SpawnLibrary.Current.enemyLaser, transform);
             }
 
             float reach = _builder != null
                 ? (_builder.Width + _builder.Height) * _builder.CellSize
                 : 32f;
-            _laser.Bind(_collider, _builder != null ? _builder.CellSize : 1f, reach);
+            _laser.Bind(body, _builder != null ? _builder.CellSize : 1f, reach);
         }
 
         public void Silence()
         {
-            _laser?.Hide();
-            for (int i = transform.childCount - 1; i >= 0; i--)
+            if (_laser != null)
             {
-                var child = transform.GetChild(i);
-                if (child.GetComponent<EnemyShot>() != null)
+                _laser.Hide();
+            }
+
+            for (int i = _shots.Count - 1; i >= 0; i--)
+            {
+                if (_shots[i] != null)
                 {
-                    Destroy(child.gameObject);
+                    Destroy(_shots[i].gameObject);
                 }
             }
+
+            _shots.Clear();
         }
 
         void Update()
@@ -84,7 +87,7 @@ namespace Pulling
                 return;
             }
 
-            if (_builder == null || (_collider != null && !_collider.enabled))
+            if (_builder == null || !body.enabled)
             {
                 _laser?.Hide();
                 return;
@@ -193,14 +196,14 @@ namespace Pulling
 
         void SpawnShot(Vector2 origin, Vector2 direction, float sizeScale = 1f, float push = PlayerTuning.EnemyShotPush)
         {
-            var shot = new GameObject("EnemyShot");
-            shot.transform.SetParent(transform, true);
-            shot.AddComponent<EnemyShot>().Launch(
+            var shot = SpawnLibrary.Spawn(SpawnLibrary.Current.enemyShot, transform);
+            _shots.Add(shot);
+            shot.Launch(
                 origin,
                 direction,
                 _bulletSprite,
                 _builder.CellSize,
-                _collider,
+                body,
                 sizeScale,
                 push);
         }

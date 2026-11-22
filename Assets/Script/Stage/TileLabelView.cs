@@ -4,38 +4,14 @@ namespace Pulling
 {
     public class TileLabelView : MonoBehaviour
     {
-        public void SetLabel(string text, Color color)
-        {
-            var mesh = GetComponent<TextMesh>();
-            if (mesh == null)
-            {
-                mesh = gameObject.AddComponent<TextMesh>();
-            }
+        public TextMesh labelMesh;
+        public SpecialTileMarker marker;
 
+        public void SetLabel(string text)
+        {
             string value = text ?? string.Empty;
-            mesh.text = value;
-            mesh.font = UiFonts.Default;
-            mesh.fontSize = 64;
-            mesh.characterSize = FitCharacterSize(value, 64);
-            mesh.anchor = TextAnchor.MiddleCenter;
-            mesh.alignment = TextAlignment.Center;
-            mesh.color = color;
-            mesh.fontStyle = FontStyle.Bold;
-
-            var renderer = GetComponent<MeshRenderer>();
-            if (renderer != null)
-            {
-                renderer.sortingOrder = 3;
-            }
-        }
-
-        public static void Attach(Transform parent, string text, Color color)
-        {
-            var labelGo = new GameObject("Label");
-            labelGo.transform.SetParent(parent, false);
-            labelGo.transform.localPosition = Vector3.zero;
-            var view = labelGo.AddComponent<TileLabelView>();
-            view.SetLabel(text, color);
+            labelMesh.text = value;
+            labelMesh.characterSize = FitCharacterSize(value, labelMesh.fontSize);
         }
 
         static float FitCharacterSize(string text, int fontSize)

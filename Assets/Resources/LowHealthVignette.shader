@@ -38,7 +38,7 @@ Shader "Pulling/LowHealthVignette"
         Cull Off
         Lighting Off
         ZWrite Off
-        ZTest [unity_GUIZTestMode]
+        ZTest Always
         Blend SrcAlpha OneMinusSrcAlpha
         ColorMask [_ColorMask]
 
@@ -50,7 +50,6 @@ Shader "Pulling/LowHealthVignette"
             #pragma fragment frag
             #pragma target 2.0
             #include "UnityCG.cginc"
-            #include "UnityUI.cginc"
 
             struct appdata_t
             {
@@ -63,10 +62,8 @@ Shader "Pulling/LowHealthVignette"
             {
                 float4 vertex : SV_POSITION;
                 fixed4 color : COLOR;
-                float2 texcoord : TEXCOORD0;
             };
 
-            sampler2D _MainTex;
             fixed4 _Color;
             float _Edge;
             float _Power;
@@ -75,21 +72,21 @@ Shader "Pulling/LowHealthVignette"
             {
                 v2f o;
                 o.vertex = UnityObjectToClipPos(v.vertex);
-                o.texcoord = v.texcoord;
                 o.color = v.color * _Color;
                 return o;
             }
 
             fixed4 frag(v2f i) : SV_Target
             {
-                float2 dist = min(i.texcoord, 1.0 - i.texcoord);
-                float aspect = _ScreenParams.x / max(_ScreenParams.y, 1.0);
-                dist.x *= aspect;
-                float rim = saturate(1.0 - min(dist.x, dist.y) / max(_Edge, 0.001));
+                float2 screen = max(_ScreenParams.xy, float2(1.0, 1.0));
+                float2 pixel = i.vertex.xy;
+                float2 edgeDist = min(pixel, screen - pixel);
+                float thickness = max(_Edge, 0.001) * screen.y;
+                float rim = saturate(1.0 - min(edgeDist.x, edgeDist.y) / thickness);
                 rim = pow(rim, _Power);
 
                 fixed4 col = i.color;
-                col.a *= tex2D(_MainTex, i.texcoord).a * rim;
+                col.a *= rim;
                 return col;
             }
             ENDCG

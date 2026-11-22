@@ -8,6 +8,7 @@ namespace Pulling
         float _radius;
         float _life;
         float _push;
+        public SpriteRenderer spriteRenderer;
         Collider2D _ignore;
         bool _spent;
 
@@ -25,11 +26,10 @@ namespace Pulling
             transform.position = origin + direction * (cellSize * 0.5f + _radius + 0.04f);
             transform.localScale = new Vector3(scale, scale, 1f);
 
-            var renderer = gameObject.AddComponent<SpriteRenderer>();
-            renderer.sprite = sprite != null
-                ? sprite
-                : SpriteFactory.CreateCircle(new Color(0.95f, 0.5f, 0.2f));
-            renderer.sortingOrder = 4;
+            if (sprite != null)
+            {
+                spriteRenderer.sprite = sprite;
+            }
 
             if (TryHitOverlap(transform.position))
             {

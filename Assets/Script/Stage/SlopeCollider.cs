@@ -13,6 +13,7 @@ namespace Pulling
     public class SlopeCollider : MonoBehaviour
     {
         public SlopeVariant variant;
+        public PolygonCollider2D shape;
         float _cellSize = 1f;
 
         public void Setup(SlopeVariant slopeVariant, float cellSize)
@@ -24,26 +25,8 @@ namespace Pulling
 
         void BuildCollider()
         {
-            var box = GetComponent<BoxCollider2D>();
-            if (box != null)
-            {
-                Destroy(box);
-            }
-
-            var edge = GetComponent<EdgeCollider2D>();
-            if (edge != null)
-            {
-                Destroy(edge);
-            }
-
-            var polygon = GetComponent<PolygonCollider2D>();
-            if (polygon == null)
-            {
-                polygon = gameObject.AddComponent<PolygonCollider2D>();
-            }
-
-            polygon.pathCount = 1;
-            polygon.SetPath(0, Triangle(_cellSize * 0.5f));
+            shape.pathCount = 1;
+            shape.SetPath(0, Triangle(_cellSize * 0.5f));
         }
 
         Vector2[] Triangle(float h)

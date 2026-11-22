@@ -21,6 +21,7 @@ namespace Pulling
         public Transform editorGhost;
         public Transform spawnMarker;
         public UnityEngine.UI.Image fadeImage;
+        public SpawnLibrary spawnLibrary;
 
         GridMapBuilder _builder;
         PlayerController _player;
@@ -62,6 +63,7 @@ namespace Pulling
             }
 
             _booted = true;
+            SpawnLibrary.Use(spawnLibrary);
             ResolveData();
             tileDatabase.EnsureDefaults();
             GameSceneRuntime.Bind(this);

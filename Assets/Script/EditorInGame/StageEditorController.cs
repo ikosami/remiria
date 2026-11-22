@@ -315,6 +315,13 @@ namespace Pulling
             _game.OverwriteRuntime();
         }
 
+        public bool TryGetWidthPreviewSource(out Camera gameplay, out float cellSize)
+        {
+            gameplay = _camera != null ? _camera.GetComponent<Camera>() : Camera.main;
+            cellSize = _builder != null ? _builder.CellSize : 1f;
+            return gameplay != null;
+        }
+
         public void ApplyGridWidth(int newWidth)
         {
             if (_builder == null || _game?.RuntimeStage == null)

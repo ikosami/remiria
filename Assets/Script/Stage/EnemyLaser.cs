@@ -4,6 +4,7 @@ namespace Pulling
 {
     public class EnemyLaser : MonoBehaviour
     {
+        public SpriteRenderer beam;
         SpriteRenderer _renderer;
         Collider2D _ignore;
         float _cell = 1f;
@@ -87,15 +88,12 @@ namespace Pulling
 
         void EnsureVisual()
         {
-            if (_renderer != null)
+            _renderer = beam;
+            if (beam.sprite == null)
             {
-                return;
+                _renderer.sprite = SpriteFactory.CreateSolid(Color.white, 8);
             }
 
-            _renderer = gameObject.AddComponent<SpriteRenderer>();
-            _renderer.sprite = SpriteFactory.CreateSolid(Color.white, 8);
-            _renderer.color = new Color(1f, 0.75f, 0.85f, 0.55f);
-            _renderer.sortingOrder = 4;
             SpriteFactory.AssignPipelineMaterial(_renderer);
         }
 

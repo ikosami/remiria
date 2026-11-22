@@ -13,6 +13,6 @@ namespace Pulling
         public bool isTrigger;
         public Sprite sprite;
         public Sprite damagedSprite;
-        public GameObject prefab;
+        public TilePiece prefab;
     }
 }

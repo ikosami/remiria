@@ -9,39 +9,21 @@ namespace Pulling
         const float Thickness = 0.22f;
         const float SurfaceSlack = 0.06f;
 
+        public BoxCollider2D surface;
         BoxCollider2D _collider;
         Collider2D _playerCollider;
         Rigidbody2D _playerBody;
         bool _ignoringPlayer;
         bool _supported;
 
-        public void Setup(BoxCollider2D col)
+        public void Setup()
         {
-            if (col == null)
-            {
-                return;
-            }
-
+            var col = surface;
             float width = col.size.x;
             float top = col.offset.y + col.size.y * 0.5f;
             float thickness = Mathf.Min(Thickness, col.size.y);
             col.size = new Vector2(width, thickness);
             col.offset = new Vector2(col.offset.x, top - thickness * 0.5f);
-            col.usedByEffector = true;
-
-            var effector = GetComponent<PlatformEffector2D>();
-            if (effector == null)
-            {
-                effector = gameObject.AddComponent<PlatformEffector2D>();
-            }
-
-            effector.useOneWay = true;
-            effector.useOneWayGrouping = false;
-            effector.useSideFriction = false;
-            effector.useSideBounce = false;
-            effector.surfaceArc = SurfaceArc;
-            effector.rotationalOffset = 0f;
-
             _collider = col;
             _supported = false;
             _ignoringPlayer = false;

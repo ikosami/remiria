@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Globalization;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -587,7 +588,17 @@ namespace Pulling
                 float into = Vector2.Dot(_internalVelocity, normal);
                 if (into < 0f)
                 {
+                    Vector2 before = _internalVelocity;
                     _internalVelocity -= into * normal;
+                    // #region agent log
+                    if (Time.frameCount % 8 == 0)
+                    AgentLog("D", "PlayerController.AbsorbBlockedVelocity", "contact stripped into-normal velocity",
+                        "{\"beforeX\":" + F(before.x) + ",\"beforeY\":" + F(before.y)
+                        + ",\"afterX\":" + F(_internalVelocity.x) + ",\"afterY\":" + F(_internalVelocity.y)
+                        + ",\"nx\":" + F(normal.x) + ",\"ny\":" + F(normal.y)
+                        + ",\"posX\":" + F(_body != null ? _body.position.x : 0f)
+                        + ",\"posY\":" + F(_body != null ? _body.position.y : 0f) + "}");
+                    // #endregion
                 }
             }
         }
@@ -706,9 +717,22 @@ namespace Pulling
             }
 
             float bounce = BounceResolver.GetBounciness(collision.collider, contact.point, _mapBuilder);
-            _internalVelocity = BounceVelocity(_prePhysicsVelocity, normal, bounce);
+            Vector2 integrated = _internalVelocity;
+            Vector2 bounced = BounceVelocity(_prePhysicsVelocity, normal, bounce);
+            Vector2 bodyVel = ToActualVelocity(bounced);
+            // #region agent log
+            AgentLog("A", "PlayerController.OnCollisionEnter2D", "bounce",
+                "{\"preX\":" + F(_prePhysicsVelocity.x) + ",\"preY\":" + F(_prePhysicsVelocity.y)
+                + ",\"integratedX\":" + F(integrated.x) + ",\"integratedY\":" + F(integrated.y)
+                + ",\"postX\":" + F(bounced.x) + ",\"postY\":" + F(bounced.y)
+                + ",\"bodyX\":" + F(bodyVel.x) + ",\"bodyY\":" + F(bodyVel.y)
+                + ",\"nx\":" + F(normal.x) + ",\"ny\":" + F(normal.y)
+                + ",\"bounce\":" + F(bounce)
+                + ",\"posX\":" + F(_body.position.x) + ",\"posY\":" + F(_body.position.y) + "}");
+            // #endregion
+            _internalVelocity = bounced;
             _prePhysicsVelocity = _internalVelocity;
-            _body.linearVelocity = ToActualVelocity(_internalVelocity);
+            _body.linearVelocity = bodyVel;
         }
 
         bool TryGetCollisionContact(Collision2D collision, out ContactPoint2D contact)
@@ -1044,6 +1068,28 @@ namespace Pulling
             return ClampFallSpeed(velocity);
         }
 
+        // #region agent log
+        static string F(float value)
+        {
+            return value.ToString("0.####", CultureInfo.InvariantCulture);
+        }
+
+        static void AgentLog(string hypothesisId, string location, string message, string dataJson)
+        {
+            try
+            {
+                long ts = System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                string line = "{\"sessionId\":\"3c2781\",\"hypothesisId\":\"" + hypothesisId
+                    + "\",\"location\":\"" + location + "\",\"message\":\"" + message
+                    + "\",\"data\":" + dataJson + ",\"timestamp\":" + ts + "}\n";
+                System.IO.File.AppendAllText(@"c:\SubDrive\project\remiria\.cursor\debug-3c2781.log", line);
+            }
+            catch
+            {
+            }
+        }
+        // #endregion
+
         static Vector2 BounceVelocity(Vector2 velocity, Vector2 normal, float bounciness)
         {
             float vn = Vector2.Dot(velocity, normal);
@@ -1361,28 +1407,10 @@ namespace Pulling
         {
             if (_visual == null)
             {
-                var existing = transform.Find("Visual");
-                if (existing != null)
-                {
-                    _visual = existing.GetComponent<SpriteRenderer>();
-                }
+                _visual = SpawnLibrary.Spawn(SpawnLibrary.Current.playerVisual, transform);
             }
 
-            if (_visual == null)
-            {
-                var go = new GameObject("Visual");
-                go.transform.SetParent(transform, false);
-                _visual = go.AddComponent<SpriteRenderer>();
-            }
-
-            _visual.sortingOrder = 5;
-            var root = GetComponent<SpriteRenderer>();
-            Material template = root != null && root != _visual ? root.sharedMaterial : null;
-            SpriteFactory.AssignPipelineMaterial(_visual, template);
-            if (root != null && root != _visual)
-            {
-                root.enabled = false;
-            }
+            SpriteFactory.AssignPipelineMaterial(_visual, null);
         }
 
         void AlignVisual(Sprite sprite)

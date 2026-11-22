@@ -116,107 +116,19 @@ namespace Pulling
 
         void EnsureArrow()
         {
-            if (_pivot == null)
+            if (_pivot != null)
             {
-                var existing = transform.Find("Arrow");
-                if (existing != null)
-                {
-                    _pivot = existing;
-                }
+                return;
             }
 
-            if (_pivot == null)
-            {
-                var go = new GameObject("Arrow");
-                go.transform.SetParent(transform, false);
-                _pivot = go.transform;
-            }
-
-            var leftover = _pivot.GetComponent<SpriteRenderer>();
-            if (leftover != null)
-            {
-                leftover.enabled = false;
-            }
-
-            _canvas = GetOrAddCanvas(_pivot);
-            _back = GetOrAddImage(_canvas, "Back");
-            _fill = GetOrAddImage(_canvas, "Fill");
-            _outline = GetOrAddImage(_canvas, "Outline");
-            _fill.type = Image.Type.Filled;
-            _fill.fillMethod = Image.FillMethod.Vertical;
-            _fill.fillOrigin = (int)Image.OriginVertical.Bottom;
+            var arrow = SpawnLibrary.Spawn(SpawnLibrary.Current.aimArrow, transform);
+            _pivot = arrow.transform;
+            _back = arrow.back;
+            _fill = arrow.fill;
+            _outline = arrow.outline;
+            _canvas = arrow.back.rectTransform.parent as RectTransform;
             ApplySprites();
             ApplyArrowScale();
-        }
-
-        static RectTransform GetOrAddCanvas(Transform pivot)
-        {
-            var existing = pivot.Find("ArrowCanvas");
-            GameObject go;
-            if (existing != null)
-            {
-                go = existing.gameObject;
-            }
-            else
-            {
-                go = new GameObject("ArrowCanvas");
-                go.transform.SetParent(pivot, false);
-            }
-
-            var canvas = go.GetComponent<Canvas>();
-            if (canvas == null)
-            {
-                canvas = go.AddComponent<Canvas>();
-            }
-
-            canvas.renderMode = RenderMode.WorldSpace;
-            canvas.overrideSorting = true;
-            canvas.sortingOrder = 6;
-
-            var rect = go.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0.5f, 0.5f);
-            rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.localPosition = Vector3.zero;
-            rect.localRotation = Quaternion.identity;
-            return rect;
-        }
-
-        Image GetOrAddImage(Transform parent, string name)
-        {
-            var child = parent.Find(name);
-            if (child == null && _pivot != null)
-            {
-                var stray = _pivot.Find(name);
-                if (stray != null)
-                {
-                    stray.SetParent(parent, false);
-                    child = stray;
-                }
-            }
-
-            if (child == null)
-            {
-                var go = new GameObject(name);
-                go.transform.SetParent(parent, false);
-                child = go.transform;
-            }
-
-            var renderer = child.GetComponent<SpriteRenderer>();
-            if (renderer != null)
-            {
-                Destroy(renderer);
-            }
-
-            var image = child.GetComponent<Image>();
-            if (image == null)
-            {
-                image = child.gameObject.AddComponent<Image>();
-            }
-
-            image.raycastTarget = false;
-            image.maskable = false;
-            return image;
         }
 
         void ApplySprites()
@@ -239,19 +151,12 @@ namespace Pulling
             }
 
             image.sprite = sprite;
-            image.color = Color.white;
-            image.preserveAspect = false;
             var rect = image.rectTransform;
             Vector2 size = sprite.rect.size;
-            rect.anchorMin = new Vector2(0.5f, 0.5f);
-            rect.anchorMax = new Vector2(0.5f, 0.5f);
             rect.sizeDelta = size;
             rect.pivot = new Vector2(
                 size.x > 0.01f ? sprite.pivot.x / size.x : 0.5f,
                 size.y > 0.01f ? sprite.pivot.y / size.y : 0.5f);
-            rect.localPosition = Vector3.zero;
-            rect.localRotation = Quaternion.identity;
-            rect.localScale = Vector3.one;
         }
 
         void ApplyArrowScale()
@@ -317,27 +222,8 @@ namespace Pulling
                 return;
             }
 
-            var existing = transform.Find("PullOrigin");
-            GameObject go;
-            if (existing != null)
-            {
-                go = existing.gameObject;
-            }
-            else
-            {
-                go = new GameObject("PullOrigin");
-                go.transform.SetParent(transform, false);
-            }
-
-            _origin = go.GetComponent<SpriteRenderer>();
-            if (_origin == null)
-            {
-                _origin = go.AddComponent<SpriteRenderer>();
-            }
-
+            _origin = SpawnLibrary.Spawn(SpawnLibrary.Current.pullOrigin, transform);
             _origin.sprite = OriginSprite();
-            _origin.color = Color.white;
-            _origin.sortingOrder = 4;
             _origin.enabled = false;
             SpriteFactory.AssignPipelineMaterial(_origin);
         }

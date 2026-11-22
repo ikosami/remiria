@@ -99,6 +99,11 @@ namespace Pulling
                     tile.sprite = TileSprites.Load(tile.id) ?? SpriteFactory.CreateForTile(tile.id, tile.color);
                 }
 
+                if (tile.prefab == null && tile.id != TileIds.Empty && tile.id != TileIds.Ground)
+                {
+                    tile.prefab = Resources.Load<TilePiece>("Prefabs/Tiles/Tile_" + tile.id);
+                }
+
                 if (tile.id == TileIds.BreakableStrong && tile.damagedSprite == null)
                 {
                     tile.damagedSprite = TileSprites.LoadDamaged() ?? SpriteFactory.CreateFractured(tile.color);

@@ -18,7 +18,6 @@ namespace Pulling
             EnsureUiInput();
             if (manager.fadeImage != null)
             {
-                manager.fadeImage.raycastTarget = false;
                 manager.fadeImage.enabled = false;
             }
 
@@ -133,92 +132,9 @@ namespace Pulling
                 return null;
             }
 
-            var existing = canvas.transform.Find("HealthVignette");
-            var go = existing != null ? existing.gameObject : new GameObject("HealthVignette", typeof(RectTransform));
-            if (existing == null)
-            {
-                go.transform.SetParent(canvas.transform, false);
-            }
-
-            var rect = go.GetComponent<RectTransform>();
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            go.transform.SetAsFirstSibling();
-
-            var image = go.GetComponent<Image>();
-            if (image == null)
-            {
-                image = go.AddComponent<Image>();
-            }
-
-            image.raycastTarget = false;
-            image.maskable = false;
-            image.color = new Color(0.86f, 0.02f, 0.05f, 0f);
-            image.enabled = false;
-
-            var shader = Resources.Load<Shader>("LowHealthVignette");
-            if (shader != null)
-            {
-                image.sprite = SpriteFactory.CreateSolid(Color.white, 4);
-                image.material = new Material(shader)
-                {
-                    name = "LowHealthVignette (runtime)",
-                    hideFlags = HideFlags.HideAndDontSave
-                };
-            }
-            else
-            {
-                image.sprite = CreateEdgeSprite();
-                Debug.LogWarning("LowHealthVignette シェーダーが見つからないため、テクスチャで縁を描きます。");
-            }
-
-            var vignette = go.GetComponent<LowHealthVignette>();
-            if (vignette == null)
-            {
-                vignette = go.AddComponent<LowHealthVignette>();
-            }
-
-            vignette.Bind(image);
+            var vignette = SpawnLibrary.Spawn(SpawnLibrary.Current.healthVignette, canvas.transform);
+            vignette.transform.SetAsFirstSibling();
             return vignette;
-        }
-
-        static Sprite CreateEdgeSprite()
-        {
-            const int size = 256;
-            const float edge = 0.2f;
-            const float power = 1.7f;
-            float aspect = Screen.height > 0 ? (float)Screen.width / Screen.height : 16f / 9f;
-            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
-            {
-                filterMode = FilterMode.Bilinear,
-                wrapMode = TextureWrapMode.Clamp,
-                hideFlags = HideFlags.HideAndDontSave,
-                name = "HealthEdge"
-            };
-
-            var pixels = new Color[size * size];
-            for (int y = 0; y < size; y++)
-            {
-                for (int x = 0; x < size; x++)
-                {
-                    float u = (x + 0.5f) / size;
-                    float v = (y + 0.5f) / size;
-                    float dx = Mathf.Min(u, 1f - u) * aspect;
-                    float dy = Mathf.Min(v, 1f - v);
-                    float rim = Mathf.Clamp01(1f - Mathf.Min(dx, dy) / edge);
-                    rim = Mathf.Pow(rim, power);
-                    pixels[y * size + x] = new Color(1f, 1f, 1f, rim);
-                }
-            }
-
-            tex.SetPixels(pixels);
-            tex.Apply();
-            var sprite = Sprite.Create(tex, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), 100f);
-            sprite.hideFlags = HideFlags.HideAndDontSave;
-            return sprite;
         }
 
         static void EnsureUiInput()

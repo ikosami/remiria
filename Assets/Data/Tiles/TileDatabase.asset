@@ -39,7 +39,7 @@ MonoBehaviour:
     isTrigger: 0
     sprite: {fileID: 21300000, guid: 54e6a595748c4b609654dcfb39ef9f08, type: 3}
     damagedSprite: {fileID: 0}
-    prefab: {fileID: 0}
+    prefab: {fileID: 100104, guid: 7dac6be669d34abdb6ac8e8ab8c98c58, type: 3}
   - id: 8
     displayName: "\u3059\u308A\u629C\u3051"
     shortLabel: "\u8DB3"
@@ -48,7 +48,7 @@ MonoBehaviour:
     isTrigger: 0
     sprite: {fileID: 21300000, guid: fcfee4fbdc464b629bdedb976527e6c8, type: 3}
     damagedSprite: {fileID: 0}
-    prefab: {fileID: 0}
+    prefab: {fileID: 100124, guid: 9611828241544d86802f4b6c331be152, type: 3}
   - id: 18
     displayName: "\u659C\u3081\u2197"
     shortLabel: "\u2197"
@@ -57,7 +57,7 @@ MonoBehaviour:
     isTrigger: 0
     sprite: {fileID: 21300000, guid: d8e6e7f6fc0f4c669864dca1940d3bba, type: 3}
     damagedSprite: {fileID: 0}
-    prefab: {fileID: 0}
+    prefab: {fileID: 100182, guid: 3d556338a2a84e558528fe011f12520a, type: 3}
   - id: 19
     displayName: "\u659C\u3081\u2196"
     shortLabel: "\u2196"
@@ -66,7 +66,7 @@ MonoBehaviour:
     isTrigger: 0
     sprite: {fileID: 21300000, guid: 01ec12ac1b96412dab8ad27d4f758dc8, type: 3}
     damagedSprite: {fileID: 0}
-    prefab: {fileID: 0}
+    prefab: {fileID: 100189, guid: 7e158a981e894d2498abbb4416b3cd14, type: 3}
   - id: 20
     displayName: "\u659C\u3081\u2198"
     shortLabel: "\u2198"
@@ -75,7 +75,7 @@ MonoBehaviour:
     isTrigger: 0
     sprite: {fileID: 21300000, guid: 3cc2c4925e6240d3b59eed10ff22a76f, type: 3}
     damagedSprite: {fileID: 0}
-    prefab: {fileID: 0}
+    prefab: {fileID: 100196, guid: 9c6e7e20dfc14e4884435a801bd19827, type: 3}
   - id: 21
     displayName: "\u659C\u3081\u2199"
     shortLabel: "\u2199"
@@ -84,7 +84,7 @@ MonoBehaviour:
     isTrigger: 0
     sprite: {fileID: 21300000, guid: 4c007f9f4d414f6f968221f0621e5042, type: 3}
     damagedSprite: {fileID: 0}
-    prefab: {fileID: 0}
+    prefab: {fileID: 100203, guid: 5c82b26a2991462c85fa7d3ac81fc595, type: 3}
   - id: 26
     displayName: "\u93E1\u2197"
     shortLabel: 
@@ -93,7 +93,7 @@ MonoBehaviour:
     isTrigger: 0
     sprite: {fileID: 0}
     damagedSprite: {fileID: 0}
-    prefab: {fileID: 0}
+    prefab: {fileID: 100238, guid: be2dd11b24ad46a2b17856336c925855, type: 3}
   - id: 27
     displayName: "\u93E1\u2196"
     shortLabel: 
@@ -102,7 +102,7 @@ MonoBehaviour:
     isTrigger: 0
     sprite: {fileID: 0}
     damagedSprite: {fileID: 0}
-    prefab: {fileID: 0}
+    prefab: {fileID: 100245, guid: a8e7036c86d140688983d623ef87974a, type: 3}
   - id: 28
     displayName: "\u93E1\u2198"
     shortLabel: 
@@ -111,7 +111,7 @@ MonoBehaviour:
     isTrigger: 0
     sprite: {fileID: 0}
     damagedSprite: {fileID: 0}
-    prefab: {fileID: 0}
+    prefab: {fileID: 100252, guid: 67977ef972f64ef299f1603d77e8acb1, type: 3}
   - id: 29
     displayName: "\u93E1\u2199"
     shortLabel: 
@@ -120,7 +120,7 @@ MonoBehaviour:
     isTrigger: 0
     sprite: {fileID: 0}
     damagedSprite: {fileID: 0}
-    prefab: {fileID: 0}
+    prefab: {fileID: 100259, guid: 561f25616d9846baaea34ba5d146f5be, type: 3}
   - id: 4
     displayName: "\u58CA\u308C\u5F31"
     shortLabel: "\u5F31"
@@ -129,7 +129,7 @@ MonoBehaviour:
     isTrigger: 0
     sprite: {fileID: 21300000, guid: 5aab272eb38e4e7f998288df85eee6c3, type: 3}
     damagedSprite: {fileID: 0}
-    prefab: {fileID: 0}
+    prefab: {fileID: 100098, guid: 0e213c236ca044dcbe1979e94d6cb11a, type: 3}
   - id: 6
     displayName: "\u58CA\u308C\u5F37"
     shortLabel: "\u5F37"
@@ -138,7 +138,7 @@ MonoBehaviour:
     isTrigger: 0
     sprite: {fileID: 21300000, guid: db8669ea83f34421b55af812cbcb8ea3, type: 3}
     damagedSprite: {fileID: 21300000, guid: 82035e0f0ed841d9afcf5b9e69925951, type: 3}
-    prefab: {fileID: 0}
+    prefab: {fileID: 100111, guid: f6dcd1e01aa640a2a3b7b8860c5643af, type: 3}
   - id: 23
     displayName: "\u4E00\u767A"
     shortLabel: "\u4E00"
@@ -147,7 +147,7 @@ MonoBehaviour:
     isTrigger: 0
     sprite: {fileID: 0}
     damagedSprite: {fileID: 0}
-    prefab: {fileID: 0}
+    prefab: {fileID: 100217, guid: 29ffc407132a4644835178232f56bb43, type: 3}
   - id: 25
     displayName: "\u30AA\u30F3\u30AA\u30D5"
     shortLabel: "\u30AA"
@@ -156,7 +156,7 @@ MonoBehaviour:
     isTrigger: 0
     sprite: {fileID: 0}
     damagedSprite: {fileID: 0}
-    prefab: {fileID: 0}
+    prefab: {fileID: 100231, guid: bf42d0fdf0af405aa097898e60d7f955, type: 3}
   - id: 24
     displayName: "\u6249"
     shortLabel: "\u6249"
@@ -165,7 +165,7 @@ MonoBehaviour:
     isTrigger: 0
     sprite: {fileID: 0}
     damagedSprite: {fileID: 0}
-    prefab: {fileID: 0}
+    prefab: {fileID: 100224, guid: 94e8aa1e35114656bf8a167ad0dbc275, type: 3}
   - id: 2
     displayName: "\u30B4\u30FC\u30EB"
     shortLabel: "\u65D7"
@@ -174,7 +174,7 @@ MonoBehaviour:
     isTrigger: 1
     sprite: {fileID: 21300000, guid: d140753e26a74dfc8caccee2b808a971, type: 3}
     damagedSprite: {fileID: 0}
-    prefab: {fileID: 0}
+    prefab: {fileID: 100085, guid: 6c332b748db740898bdbec55458040f8, type: 3}
   - id: 3
     displayName: "\u5371\u967A"
     shortLabel: "\u7A9F"
@@ -183,7 +183,7 @@ MonoBehaviour:
     isTrigger: 1
     sprite: {fileID: 21300000, guid: 7896f64a2bd24bb4b43cd65829d704a4, type: 3}
     damagedSprite: {fileID: 0}
-    prefab: {fileID: 0}
+    prefab: {fileID: 100091, guid: 0ac4498567d641a98dc6429cbaf941c6, type: 3}
   - id: 7
     displayName: "\u592A\u967D\u5149"
     shortLabel: "\u5149"
@@ -192,7 +192,7 @@ MonoBehaviour:
     isTrigger: 1
     sprite: {fileID: 21300000, guid: 2d60f23eb2e640968dc35f7d554fe906, type: 3}
     damagedSprite: {fileID: 0}
-    prefab: {fileID: 0}
+    prefab: {fileID: 100116, guid: 5c78a34bef28472dac7b71f2a2daac5e, type: 3}
   - id: 12
     displayName: "\u30D5\u30E9\u30F3"
     shortLabel: "\u5F17"
@@ -201,7 +201,7 @@ MonoBehaviour:
     isTrigger: 1
     sprite: {fileID: 21300000, guid: c8996d2e3fa142d2be5b35d7940dfd1a, type: 3}
     damagedSprite: {fileID: 0}
-    prefab: {fileID: 0}
+    prefab: {fileID: 100148, guid: 0d2f0ab01c15459a96a42e3c8d42abea, type: 3}
   - id: 9
     displayName: "\u7D05\u7F8E\u9234"
     shortLabel: "\u9234"
@@ -210,7 +210,7 @@ MonoBehaviour:
     isTrigger: 1
     sprite: {fileID: 21300000, guid: b3d548bcb24b4a3f91e9b2e457213460, type: 3}
     damagedSprite: {fileID: 0}
-    prefab: {fileID: 0}
+    prefab: {fileID: 100130, guid: ffb17411b8514cc3872d1a2f740d70e0, type: 3}
   - id: 10
     displayName: "\u30D1\u30C1\u30E5\u30EA\u30FC"
     shortLabel: "\u5E15"
@@ -219,7 +219,7 @@ MonoBehaviour:
     isTrigger: 1
     sprite: {fileID: 21300000, guid: a12b5c7f4ca54842bef8cf94628fc8a6, type: 3}
     damagedSprite: {fileID: 0}
-    prefab: {fileID: 0}
+    prefab: {fileID: 100136, guid: 0a9939e702634e238a0b9ed8011ba3aa, type: 3}
   - id: 11
     displayName: "\u54B2\u591C"
     shortLabel: "\u54B2"
@@ -228,7 +228,7 @@ MonoBehaviour:
     isTrigger: 1
     sprite: {fileID: 21300000, guid: 6196df0170b24ceaab35396ebe5f1b8d, type: 3}
     damagedSprite: {fileID: 0}
-    prefab: {fileID: 0}
+    prefab: {fileID: 100142, guid: 9dda6183f732403c895a0f998843f790, type: 3}
   - id: 13
     displayName: "\u7389"
     shortLabel: "\u7389"
@@ -237,7 +237,7 @@ MonoBehaviour:
     isTrigger: 0
     sprite: {fileID: 21300000, guid: f3b03d523fb74536bea5c61e44dacef2, type: 3}
     damagedSprite: {fileID: 0}
-    prefab: {fileID: 0}
+    prefab: {fileID: 100155, guid: ebcebd6802ea4f37aa656459a72faf74, type: 3}
   - id: 14
     displayName: "\uFF13\u65B9\u5411"
     shortLabel: "\uFF13"
@@ -246,7 +246,7 @@ MonoBehaviour:
     isTrigger: 0
     sprite: {fileID: 21300000, guid: 4b8a2462e6bf42f9bdab858776e3bb6a, type: 3}
     damagedSprite: {fileID: 0}
-    prefab: {fileID: 0}
+    prefab: {fileID: 100162, guid: 6f189068f47340eb819dda40a16af893, type: 3}
   - id: 22
     displayName: "\u5927\u7389"
     shortLabel: "\u5927"
@@ -255,7 +255,7 @@ MonoBehaviour:
     isTrigger: 0
     sprite: {fileID: 0}
     damagedSprite: {fileID: 0}
-    prefab: {fileID: 0}
+    prefab: {fileID: 100210, guid: 0d6e75b4e41b41d8bd5120bb3ab4fde4, type: 3}
   - id: 15
     displayName: "\u30EC\u30FC\u30B6\u30FC"
     shortLabel: "\u5149"
@@ -264,7 +264,7 @@ MonoBehaviour:
     isTrigger: 0
     sprite: {fileID: 21300000, guid: ed3aea29dfdd49fdb301bceb4b23a99c, type: 3}
     damagedSprite: {fileID: 0}
-    prefab: {fileID: 0}
+    prefab: {fileID: 100169, guid: e154b2c20f3a4426bb1ab1d5a851a329, type: 3}
   - id: 16
     displayName: "\u5F3E"
     shortLabel: "\u5F3E"
@@ -273,4 +273,4 @@ MonoBehaviour:
     isTrigger: 1
     sprite: {fileID: 21300000, guid: 61cef16a2c8b4e8082d99da50beff2a6, type: 3}
     damagedSprite: {fileID: 0}
-    prefab: {fileID: 0}
+    prefab: {fileID: 100175, guid: d8a017f9386444eca7b58870e8cc6189, type: 3}

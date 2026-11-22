@@ -57,7 +57,6 @@ namespace Pulling
                 renderer.flipY = false;
                 renderer.sortingLayerID = source.sortingLayerID;
                 renderer.sortingOrder = source.sortingOrder - 1;
-                renderer.color = Color.white;
                 renderer.transform.localPosition = Directions[i] * radius;
             }
         }
@@ -89,20 +88,12 @@ namespace Pulling
             };
             _material.SetColor("_OutlineColor", Color.white);
 
-            var rootGo = new GameObject("AirJumpOutline");
-            rootGo.hideFlags = HideFlags.HideAndDontSave;
-            _root = rootGo.transform;
-            _root.SetParent(visual, false);
-
-            for (int i = 0; i < _renderers.Length; i++)
+            var view = SpawnLibrary.Spawn(SpawnLibrary.Current.airJumpOutline, visual);
+            _root = view.transform;
+            for (int i = 0; i < view.edges.Length; i++)
             {
-                var go = new GameObject("Edge");
-                go.hideFlags = HideFlags.HideAndDontSave;
-                go.transform.SetParent(_root, false);
-                var renderer = go.AddComponent<SpriteRenderer>();
-                renderer.sharedMaterial = _material;
-                renderer.color = Color.white;
-                _renderers[i] = renderer;
+                view.edges[i].sharedMaterial = _material;
+                _renderers[i] = view.edges[i];
             }
         }
     }

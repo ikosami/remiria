@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3a91e0b7d4f4a2e9b6c1d8e5f0a4731, type: 3}
+  m_Name: SpawnLibrary
+  m_EditorClassIdentifier: Assembly-CSharp::Pulling.SpawnLibrary
+  blastFlash: {fileID: 100023, guid: 96aaf885f67c4ca4b8fcf45d224c8559, type: 3}
+  enemyShot: {fileID: 100004, guid: 9c1d2815edd546a38dbd8c75f30405e7, type: 3}
+  enemyLaser: {fileID: 100008, guid: ea11e465be4842efb2a515cf550c4496, type: 3}
+  healthVignette: {fileID: 100073, guid: 636e802c79fb4034a2017900a32516ee, type: 3}
+  eventSystem: {fileID: 0}
+  tileLabel: {fileID: 100078, guid: cae3ddce0d0841fda52c8b69078d2a16, type: 3}
+  playerVisual: {fileID: 100011, guid: 30f4b138fc3a4f27a2d3202b9ea3b902, type: 3}
+  aimArrow: {fileID: 100294, guid: acd4406490d745e588a70f585fef2aa2, type: 3}
+  pullOrigin: {fileID: 100014, guid: 2e384a7b993f4818a7a7e8822264dfba, type: 3}
+  airJumpOutline: {fileID: 100056, guid: d790e407bd17454e9ffc57b2070838f3, type: 3}
+  skyBeam: {fileID: 100017, guid: f865a12c960d448dab796e5c91f4bebf, type: 3}
+  switchLever: {fileID: 100020, guid: 156105f94b9141448acc2984d977f0cd, type: 3}
+  meilingGuide: {fileID: 100064, guid: 23585ebbc8294db59d83b5e86c64595e, type: 3}
+  ceilingRoot: {fileID: 100065, guid: b5b4d98436794f7fa147378331a61135, type: 3}
+  ceilingWall: {fileID: 100069, guid: 6886d99dd63e40628a9e18bdfcb939f1, type: 3}
+  stageRow: {fileID: 0}
+  paletteItem: {fileID: 0}
+  paletteHeader: {fileID: 0}

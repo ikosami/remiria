@@ -11,7 +11,11 @@ namespace Pulling
         public TileDatabase tileDatabase;
 
         readonly Dictionary<int, Tile> _tiles = new Dictionary<int, Tile>();
-        readonly List<GameObject> _specials = new List<GameObject>();
+        readonly List<TilePiece> _specials = new List<TilePiece>();
+        readonly List<TileLabelView> _labels = new List<TileLabelView>();
+        readonly List<CompanionMeiling> _meilings = new List<CompanionMeiling>();
+        readonly List<EnemyBlock> _enemies = new List<EnemyBlock>();
+        readonly List<CeilingWall> _ceilingWalls = new List<CeilingWall>();
         readonly List<DoorGate> _doors = new List<DoorGate>();
         readonly List<Vector2Int> _doorCells = new List<Vector2Int>();
         readonly List<SwitchPlate> _toggles = new List<SwitchPlate>();
@@ -32,7 +36,7 @@ namespace Pulling
         PhysicsMaterial2D _blockMaterial;
         GameManager _game;
         SkyLightView _skyLight;
-        GameObject _ceilingRoot;
+        Transform _ceilingRoot;
         bool _collidersEnabled = true;
         bool _showMeilingGuides;
 
@@ -156,13 +160,9 @@ namespace Pulling
         public void SetMeilingGuides(bool visible)
         {
             _showMeilingGuides = visible;
-            for (int i = 0; i < _specials.Count; i++)
+            for (int i = 0; i < _meilings.Count; i++)
             {
-                var meiling = _specials[i] != null ? _specials[i].GetComponent<CompanionMeiling>() : null;
-                if (meiling != null)
-                {
-                    meiling.SetGuideVisible(visible);
-                }
+                _meilings[i].SetGuideVisible(visible);
             }
         }
 
@@ -180,19 +180,9 @@ namespace Pulling
 
         public void SilenceEnemies()
         {
-            for (int i = 0; i < _specials.Count; i++)
+            for (int i = 0; i < _enemies.Count; i++)
             {
-                var special = _specials[i];
-                if (special == null)
-                {
-                    continue;
-                }
-
-                var enemy = special.GetComponent<EnemyBlock>();
-                if (enemy != null)
-                {
-                    enemy.Silence();
-                }
+                _enemies[i].Silence();
             }
         }
 
@@ -206,36 +196,15 @@ namespace Pulling
                     : Collider2D.CompositeOperation.None;
             }
 
-            foreach (var special in _specials)
+            for (int i = 0; i < _specials.Count; i++)
             {
-                if (special == null)
-                {
-                    continue;
-                }
-
-                var door = special.GetComponent<DoorGate>();
-                if (door != null && door.IsOpening)
-                {
-                    continue;
-                }
-
-                var colliders = special.GetComponents<Collider2D>();
-                for (int i = 0; i < colliders.Length; i++)
-                {
-                    colliders[i].enabled = enabled;
-                }
+                _specials[i].SetSolid(enabled);
             }
 
             _collidersEnabled = enabled;
-            if (_ceilingRoot == null)
+            for (int i = 0; i < _ceilingWalls.Count; i++)
             {
-                return;
-            }
-
-            var ceiling = _ceilingRoot.GetComponents<BoxCollider2D>();
-            for (int i = 0; i < ceiling.Length; i++)
-            {
-                ceiling[i].enabled = enabled;
+                _ceilingWalls[i].box.enabled = enabled;
             }
         }
 
@@ -478,14 +447,9 @@ namespace Pulling
         {
             if (_ceilingRoot != null)
             {
-                var existing = _ceilingRoot.GetComponents<BoxCollider2D>();
-                for (int i = 0; i < existing.Length; i++)
-                {
-                    existing[i].enabled = false;
-                }
-
-                Destroy(_ceilingRoot);
+                Destroy(_ceilingRoot.gameObject);
                 _ceilingRoot = null;
+                _ceilingWalls.Clear();
             }
 
             if (Grid == null || Width <= 0 || Height <= 0)
@@ -504,9 +468,8 @@ namespace Pulling
 
                 if (_ceilingRoot == null)
                 {
-                    _ceilingRoot = new GameObject("CeilingWalls");
                     Transform parent = groundTilemap != null ? groundTilemap.transform : transform;
-                    _ceilingRoot.transform.SetParent(parent, false);
+                    _ceilingRoot = SpawnLibrary.Spawn(SpawnLibrary.Current.ceilingRoot, parent);
                 }
 
                 int start = x;
@@ -541,7 +504,9 @@ namespace Pulling
                 bottom -= Mathf.Min(CeilingSeam, cell * 0.2f);
             }
 
-            var box = _ceilingRoot.AddComponent<BoxCollider2D>();
+            var wall = SpawnLibrary.Spawn(SpawnLibrary.Current.ceilingWall, _ceilingRoot);
+            _ceilingWalls.Add(wall);
+            var box = wall.box;
             box.sharedMaterial = BlockMaterial();
             box.enabled = _collidersEnabled;
             box.size = new Vector2(width, CeilingWallHeight);
@@ -595,147 +560,94 @@ namespace Pulling
                 return;
             }
 
-            var go = new GameObject($"Label_{def.displayName}_{x}_{y}");
-            go.transform.SetParent(specialRoot, false);
-            go.transform.position = CellCenter(x, y);
-            AttachLabel(go, def);
-            var marker = go.AddComponent<SpecialTileMarker>();
-            marker.x = x;
-            marker.y = y;
-            marker.labelOnly = true;
-            _specials.Add(go);
+            var label = SpawnLibrary.Spawn(SpawnLibrary.Current.tileLabel, CellCenter(x, y), Quaternion.identity, specialRoot);
+            AttachLabel(label, def);
+            label.marker.x = x;
+            label.marker.y = y;
+            label.marker.labelOnly = true;
+            _labels.Add(label);
         }
 
         void SpawnSpecial(int x, int y, TileDefinition def)
         {
-            GameObject go;
-            if (def.prefab != null)
+            var piece = Instantiate(def.prefab, CellCenter(x, y), Quaternion.identity, specialRoot);
+            piece.sprite.sprite = def.sprite;
+            TileSprites.FitToCell(piece.transform, piece.sprite.sprite, CellSize);
+            FitBox(piece, def);
+            piece.marker.x = x;
+            piece.marker.y = y;
+            AttachComponents(piece, def, x, y);
+            if (SpriteFactory.UsesTextLabel(def.id))
             {
-                go = Instantiate(def.prefab, CellCenter(x, y), Quaternion.identity, specialRoot);
-            }
-            else
-            {
-                go = CreateSpecialObject(x, y, def);
-            }
-
-            var marker = go.GetComponent<SpecialTileMarker>();
-            if (marker == null)
-            {
-                marker = go.AddComponent<SpecialTileMarker>();
+                var label = SpawnLibrary.Spawn(SpawnLibrary.Current.tileLabel, piece.transform);
+                AttachLabel(label, def);
             }
 
-            marker.x = x;
-            marker.y = y;
-            AttachComponents(go, def, x, y);
-            AttachLabel(go, def);
-            _specials.Add(go);
+            _specials.Add(piece);
         }
 
-        GameObject CreateSpecialObject(int x, int y, TileDefinition def)
+        void FitBox(TilePiece piece, TileDefinition def)
         {
-            var go = new GameObject($"Tile_{def.displayName}_{x}_{y}");
-            go.transform.SetParent(specialRoot, false);
-            go.transform.position = CellCenter(x, y);
-
-            var renderer = go.AddComponent<SpriteRenderer>();
-            renderer.sprite = def.sprite != null ? def.sprite : SpriteFactory.CreateSolid(def.color);
-            renderer.color = Color.white;
-            renderer.sortingOrder = 1;
-            TileSprites.FitToCell(go.transform, renderer.sprite, CellSize);
-
-            if (IsDiagonal(def.id))
+            if (IsDiagonal(def.id) || def.id == TileIds.SwitchLight)
             {
-                var slope = go.AddComponent<SlopeCollider>();
-                slope.Setup(GetSlopeVariant(def.id), CellSize);
-            }
-            else if (def.id != TileIds.SwitchLight)
-            {
-                var col = go.AddComponent<BoxCollider2D>();
-                col.isTrigger = def.isTrigger || def.id == TileIds.Fran;
-                bool fullSize = def.id == TileIds.Breakable
-                                || def.id == TileIds.BreakableStrong
-                                || def.id == TileIds.Bomb
-                                || def.id == TileIds.BlastWall
-                                || def.id == TileIds.HighBounce
-                                || def.id == TileIds.OneWay
-                                || def.id == TileIds.Fran
-                                || def.id == TileIds.EnemyWeak
-                                || def.id == TileIds.EnemyMid
-                                || def.id == TileIds.EnemyHeavy
-                                || def.id == TileIds.EnemyBoss
-                                || def.id == TileIds.Switch
-                                || def.id == TileIds.SwitchToggle
-                                || def.id == TileIds.Door;
-                col.size = fullSize
-                    ? new Vector2(CellSize, CellSize)
-                    : new Vector2(CellSize * 0.9f, CellSize * 0.9f);
-
-                if (def.id == TileIds.Breakable || def.id == TileIds.BreakableStrong
-                    || def.id == TileIds.Bomb || def.id == TileIds.BlastWall
-                    || def.id == TileIds.HighBounce
-                    || def.id == TileIds.OneWay || def.id == TileIds.EnemyWeak
-                    || def.id == TileIds.EnemyMid || def.id == TileIds.EnemyHeavy
-                    || def.id == TileIds.EnemyBoss
-                    || def.id == TileIds.Switch
-                    || def.id == TileIds.SwitchToggle
-                    || def.id == TileIds.Door)
-                {
-                    col.sharedMaterial = BlockMaterial();
-                }
-
-                if (def.id == TileIds.Meiling)
-                {
-                    col.isTrigger = true;
-                    col.sharedMaterial = null;
-                    col.size = new Vector2(CellSize * 0.98f, CellSize * 0.98f);
-                }
+                return;
             }
 
-            return go;
+            var col = piece.box;
+            col.isTrigger = def.isTrigger || def.id == TileIds.Fran;
+            bool fullSize = def.id == TileIds.Breakable
+                            || def.id == TileIds.BreakableStrong
+                            || def.id == TileIds.Bomb
+                            || def.id == TileIds.BlastWall
+                            || def.id == TileIds.HighBounce
+                            || def.id == TileIds.OneWay
+                            || def.id == TileIds.Fran
+                            || def.id == TileIds.EnemyWeak
+                            || def.id == TileIds.EnemyMid
+                            || def.id == TileIds.EnemyHeavy
+                            || def.id == TileIds.EnemyBoss
+                            || def.id == TileIds.Switch
+                            || def.id == TileIds.SwitchToggle
+                            || def.id == TileIds.Door;
+            col.size = fullSize
+                ? new Vector2(CellSize, CellSize)
+                : new Vector2(CellSize * 0.9f, CellSize * 0.9f);
+
+            if (fullSize && def.id != TileIds.Fran)
+            {
+                col.sharedMaterial = BlockMaterial();
+            }
+
+            if (def.id == TileIds.Meiling)
+            {
+                col.isTrigger = true;
+                col.sharedMaterial = null;
+                col.size = new Vector2(CellSize * 0.98f, CellSize * 0.98f);
+            }
         }
 
-        void AttachComponents(GameObject go, TileDefinition def, int x, int y)
+        void AttachComponents(TilePiece piece, TileDefinition def, int x, int y)
         {
             switch (def.id)
             {
                 case TileIds.Goal:
                 case TileIds.Hazard:
-                    {
-                        var trigger = EnsureComponent<StageTrigger>(go);
-                        trigger.Bind(_game, def.id == TileIds.Goal ? StageTriggerKind.Goal : StageTriggerKind.Hazard);
-                        break;
-                    }
+                    piece.trigger.Bind(_game, def.id == TileIds.Goal ? StageTriggerKind.Goal : StageTriggerKind.Hazard);
+                    break;
                 case TileIds.Breakable:
-                    {
-                        var block = EnsureComponent<BreakableBlock>(go);
-                        block.Bind(this, x, y, PlayerTuning.BreakableWeakSpeed, 1);
-                        AttachBounce(go, def.id);
-                        break;
-                    }
+                    piece.breakable.Bind(this, x, y, PlayerTuning.BreakableWeakSpeed, 1);
+                    piece.bounce.Bind(def.id, TileBounceTable.GetBounciness(def.id));
+                    break;
                 case TileIds.BreakableStrong:
-                    {
-                        var block = EnsureComponent<BreakableBlock>(go);
-                        block.Bind(this, x, y, PlayerTuning.BreakableStrongSpeed, PlayerTuning.BreakableStrongHits, def.damagedSprite);
-                        AttachBounce(go, def.id);
-                        break;
-                    }
+                    piece.breakable.Bind(this, x, y, PlayerTuning.BreakableStrongSpeed, PlayerTuning.BreakableStrongHits, def.damagedSprite);
+                    piece.bounce.Bind(def.id, TileBounceTable.GetBounciness(def.id));
+                    break;
                 case TileIds.Bomb:
-                    {
-                        var block = EnsureComponent<BreakableBlock>(go);
-                        block.Bind(this, x, y, PlayerTuning.BreakableWeakSpeed, 1, null, IgniteBlast);
-                        AttachBounce(go, def.id);
-                        break;
-                    }
+                    piece.breakable.Bind(this, x, y, PlayerTuning.BreakableWeakSpeed, 1, null, IgniteBlast);
+                    piece.bounce.Bind(def.id, TileBounceTable.GetBounciness(def.id));
+                    break;
                 case TileIds.BlastWall:
                 case TileIds.HighBounce:
-                case TileIds.OneWay:
-                case TileIds.EnemyWeak:
-                case TileIds.EnemyMid:
-                case TileIds.EnemyHeavy:
-                case TileIds.EnemyBoss:
-                case TileIds.Switch:
-                case TileIds.SwitchToggle:
-                case TileIds.Door:
                 case TileIds.SlopeNE:
                 case TileIds.SlopeNW:
                 case TileIds.SlopeSE:
@@ -744,108 +656,65 @@ namespace Pulling
                 case TileIds.MirrorNW:
                 case TileIds.MirrorSE:
                 case TileIds.MirrorSW:
-                    AttachBounce(go, def.id);
+                    piece.bounce.Bind(def.id, TileBounceTable.GetBounciness(def.id));
                     break;
-            }
-
-            switch (def.id)
-            {
                 case TileIds.OneWay:
-                {
-                    var platform = EnsureComponent<OneWayPlatform>(go);
-                    platform.Setup(go.GetComponent<BoxCollider2D>());
+                    piece.bounce.Bind(def.id, TileBounceTable.GetBounciness(def.id));
+                    piece.oneWay.Setup();
                     break;
-                }
                 case TileIds.Meiling:
-                    {
-                        var meilingCollider = go.GetComponent<BoxCollider2D>();
-                        if (meilingCollider != null)
-                        {
-                            meilingCollider.isTrigger = true;
-                        }
-
-                        var meiling = EnsureComponent<CompanionMeiling>(go);
-                        var setting = _game != null && _game.RuntimeStage != null
-                            ? _game.RuntimeStage.FindMeiling(x, y)
-                            : null;
-                        float angle = setting != null ? setting.angle : 0f;
-                        float strength = setting != null ? setting.strength : PlayerTuning.MeilingDefaultSpeed;
-                        meiling.Apply(angle, strength);
-                        meiling.SetGuideVisible(_showMeilingGuides);
-                        break;
-                    }
-                case TileIds.Patchouli:
-                    EnsureComponent<CompanionPatchouli>(go);
-                    break;
-                case TileIds.Sakuya:
-                    EnsureComponent<CompanionSakuya>(go);
+                    var setting = _game != null && _game.RuntimeStage != null
+                        ? _game.RuntimeStage.FindMeiling(x, y)
+                        : null;
+                    float angle = setting != null ? setting.angle : 0f;
+                    float strength = setting != null ? setting.strength : PlayerTuning.MeilingDefaultSpeed;
+                    piece.meiling.Apply(angle, strength);
+                    piece.meiling.SetGuideVisible(_showMeilingGuides);
+                    _meilings.Add(piece.meiling);
                     break;
                 case TileIds.Fran:
-                    {
-                        var fran = EnsureComponent<FranNpc>(go);
-                        fran.Bind(this, tileDatabase, x, y);
-                        break;
-                    }
+                    piece.fran.Bind(this, tileDatabase, x, y);
+                    break;
                 case TileIds.EnemyWeak:
-                    {
-                        var enemy = EnsureComponent<EnemyBlock>(go);
-                        enemy.Bind(this, x, y, 1, EnemyAttack.Pellet);
-                        break;
-                    }
+                    piece.bounce.Bind(def.id, TileBounceTable.GetBounciness(def.id));
+                    piece.enemy.Bind(this, x, y, 1, EnemyAttack.Pellet);
+                    _enemies.Add(piece.enemy);
+                    break;
                 case TileIds.EnemyMid:
-                    {
-                        var enemy = EnsureComponent<EnemyBlock>(go);
-                        enemy.Bind(this, x, y, 2, EnemyAttack.ThreeWay);
-                        break;
-                    }
+                    piece.bounce.Bind(def.id, TileBounceTable.GetBounciness(def.id));
+                    piece.enemy.Bind(this, x, y, 2, EnemyAttack.ThreeWay);
+                    _enemies.Add(piece.enemy);
+                    break;
                 case TileIds.EnemyHeavy:
-                    {
-                        var enemy = EnsureComponent<EnemyBlock>(go);
-                        enemy.Bind(this, x, y, 2, EnemyAttack.Heavy);
-                        break;
-                    }
+                    piece.bounce.Bind(def.id, TileBounceTable.GetBounciness(def.id));
+                    piece.enemy.Bind(this, x, y, 2, EnemyAttack.Heavy);
+                    _enemies.Add(piece.enemy);
+                    break;
                 case TileIds.EnemyBoss:
-                    {
-                        var enemy = EnsureComponent<EnemyBlock>(go);
-                        enemy.Bind(this, x, y, 5, EnemyAttack.Laser);
-                        break;
-                    }
-                case TileIds.Bullet:
-                    EnsureComponent<BulletBlock>(go);
+                    piece.bounce.Bind(def.id, TileBounceTable.GetBounciness(def.id));
+                    piece.enemy.Bind(this, x, y, 5, EnemyAttack.Laser);
+                    _enemies.Add(piece.enemy);
                     break;
                 case TileIds.Switch:
-                    {
-                        var plate = EnsureComponent<SwitchPlate>(go);
-                        plate.Bind(this, x, y, false, def.color);
-                        break;
-                    }
+                    piece.bounce.Bind(def.id, TileBounceTable.GetBounciness(def.id));
+                    piece.plate.Bind(this, x, y, false, def.color);
+                    break;
                 case TileIds.SwitchToggle:
-                    {
-                        var plate = EnsureComponent<SwitchPlate>(go);
-                        plate.Bind(this, x, y, true, def.color);
-                        break;
-                    }
+                    piece.bounce.Bind(def.id, TileBounceTable.GetBounciness(def.id));
+                    piece.plate.Bind(this, x, y, true, def.color);
+                    break;
                 case TileIds.SwitchLight:
-                    {
-                        var plate = EnsureComponent<SwitchPlate>(go);
-                        plate.Bind(this, x, y, false, def.color, true);
-                        break;
-                    }
+                    piece.plate.Bind(this, x, y, false, def.color, true);
+                    break;
                 case TileIds.Door:
-                    {
-                        var door = EnsureComponent<DoorGate>(go);
-                        door.Bind(this, x, y);
-                        break;
-                    }
+                    piece.bounce.Bind(def.id, TileBounceTable.GetBounciness(def.id));
+                    piece.door.Bind(this, x, y);
+                    break;
             }
 
             if (IsDiagonal(def.id))
             {
-                var slope = go.GetComponent<SlopeCollider>();
-                if (slope != null)
-                {
-                    slope.Setup(GetSlopeVariant(def.id), CellSize);
-                }
+                piece.slope.Setup(GetSlopeVariant(def.id), CellSize);
             }
         }
 
@@ -853,55 +722,22 @@ namespace Pulling
         {
             for (int i = 0; i < _specials.Count; i++)
             {
-                var go = _specials[i];
-                if (go == null)
+                var piece = _specials[i];
+                if (piece.marker.x == x && piece.marker.y == y)
                 {
-                    continue;
-                }
-
-                var marker = go.GetComponent<SpecialTileMarker>();
-                if (marker == null || marker.x != x || marker.y != y)
-                {
-                    continue;
-                }
-
-                var meiling = go.GetComponent<CompanionMeiling>();
-                if (meiling != null)
-                {
-                    return meiling;
+                    return piece.meiling;
                 }
             }
 
             return null;
         }
 
-        static T EnsureComponent<T>(GameObject go) where T : Component
+        static void AttachLabel(TileLabelView view, TileDefinition def)
         {
-            var component = go.GetComponent<T>();
-            if (component == null)
-            {
-                component = go.AddComponent<T>();
-            }
-
-            return component;
-        }
-
-        void AttachBounce(GameObject go, int tileId)
-        {
-            var surface = EnsureComponent<BounceSurface>(go);
-            surface.Bind(tileId, TileBounceTable.GetBounciness(tileId));
-        }
-
-        static void AttachLabel(GameObject go, TileDefinition def)
-        {
-            if (!SpriteFactory.UsesTextLabel(def.id))
-            {
-                return;
-            }
-
             string label = string.IsNullOrEmpty(def.displayName) ? def.shortLabel : def.displayName;
-            TileLabelView.Attach(go.transform, label, Color.black);
+            view.SetLabel(label);
         }
+
 
         static bool IsSlope(int id)
         {
@@ -942,19 +778,23 @@ namespace Pulling
         {
             for (int i = _specials.Count - 1; i >= 0; i--)
             {
-                var go = _specials[i];
-                if (go == null)
+                var piece = _specials[i];
+                if (piece.marker.x == x && piece.marker.y == y)
                 {
+                    _meilings.Remove(piece.meiling);
+                    _enemies.Remove(piece.enemy);
+                    Destroy(piece.gameObject);
                     _specials.RemoveAt(i);
-                    continue;
                 }
+            }
 
-                var marker = go.GetComponent<SpecialTileMarker>();
-                if (marker != null && marker.x == x && marker.y == y)
+            for (int i = _labels.Count - 1; i >= 0; i--)
+            {
+                var label = _labels[i];
+                if (label.marker.x == x && label.marker.y == y)
                 {
-                    go.GetComponent<SwitchPlate>()?.DetachLight();
-                    Destroy(go);
-                    _specials.RemoveAt(i);
+                    Destroy(label.gameObject);
+                    _labels.RemoveAt(i);
                 }
             }
         }
@@ -964,22 +804,23 @@ namespace Pulling
             _suppressDoors = true;
             for (int i = 0; i < _specials.Count; i++)
             {
-                if (_specials[i] != null)
-                {
-                    _specials[i].GetComponent<SwitchPlate>()?.DetachLight();
-                    Destroy(_specials[i]);
-                }
+                Destroy(_specials[i].gameObject);
+            }
+
+            for (int i = 0; i < _labels.Count; i++)
+            {
+                Destroy(_labels[i].gameObject);
             }
 
             _specials.Clear();
+            _labels.Clear();
+            _meilings.Clear();
+            _enemies.Clear();
             if (specialRoot != null)
             {
                 for (int i = specialRoot.childCount - 1; i >= 0; i--)
                 {
-                    if (specialRoot.GetChild(i).GetComponent<BlastFlash>() != null)
-                    {
-                        Destroy(specialRoot.GetChild(i).gameObject);
-                    }
+                    Destroy(specialRoot.GetChild(i).gameObject);
                 }
             }
 
@@ -1209,12 +1050,5 @@ namespace Pulling
             _tiles[def.id] = tile;
             return tile;
         }
-    }
-
-    public class SpecialTileMarker : MonoBehaviour
-    {
-        public int x;
-        public int y;
-        public bool labelOnly;
     }
 }

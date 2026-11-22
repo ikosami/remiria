@@ -71,11 +71,15 @@ namespace Pulling
             float span = Mathf.InverseLerp(PlayerTuning.MeilingMinSpeed, PlayerTuning.MeilingMaxSpeed, _strength);
             float length = Mathf.Lerp(0.45f, 1.65f, span);
             _guideRoot.localRotation = Quaternion.Euler(0f, 0f, _angle);
-            _shaft.transform.localPosition = new Vector3(length * 0.5f, 0f, 0f);
-            _shaft.transform.localScale = new Vector3(length, 0.08f, 1f);
-            _head.transform.localPosition = new Vector3(length + 0.02f, 0f, 0f);
-            _head.transform.localRotation = Quaternion.Euler(0f, 0f, 45f);
-            _head.transform.localScale = new Vector3(0.18f, 0.18f, 1f);
+            var shaftPosition = _shaft.transform.localPosition;
+            shaftPosition.x = length * 0.5f;
+            _shaft.transform.localPosition = shaftPosition;
+            var shaftScale = _shaft.transform.localScale;
+            shaftScale.x = length;
+            _shaft.transform.localScale = shaftScale;
+            var headPosition = _head.transform.localPosition;
+            headPosition.x = length + 0.02f;
+            _head.transform.localPosition = headPosition;
         }
 
         void EnsureGuide()
@@ -85,22 +89,20 @@ namespace Pulling
                 return;
             }
 
-            var root = new GameObject("Guide");
-            root.transform.SetParent(transform, false);
-            _guideRoot = root.transform;
-
-            _shaft = CreateGuidePart("Shaft", root.transform);
-            _head = CreateGuidePart("Head", root.transform);
-            root.SetActive(_guideVisible);
+            var guide = SpawnLibrary.Spawn(SpawnLibrary.Current.meilingGuide, transform);
+            _guideRoot = guide.transform;
+            _shaft = PrepareGuidePart(guide.shaft);
+            _head = PrepareGuidePart(guide.head);
+            guide.gameObject.SetActive(_guideVisible);
         }
 
-        static SpriteRenderer CreateGuidePart(string name, Transform parent)
+        static SpriteRenderer PrepareGuidePart(SpriteRenderer renderer)
         {
-            var go = new GameObject(name);
-            go.transform.SetParent(parent, false);
-            var renderer = go.AddComponent<SpriteRenderer>();
-            renderer.sprite = SpriteFactory.CreateSolid(new Color(1f, 0.92f, 0.35f, 0.95f));
-            renderer.sortingOrder = 12;
+            if (renderer.sprite == null)
+            {
+                renderer.sprite = SpriteFactory.CreateSolid(new Color(1f, 0.92f, 0.35f, 0.95f));
+            }
+
             SpriteFactory.AssignPipelineMaterial(renderer);
             return renderer;
         }

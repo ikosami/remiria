@@ -185,18 +185,13 @@ namespace Pulling
         {
             while (_beams.Count <= index)
             {
-                var go = new GameObject("Beam");
-                go.transform.SetParent(transform, false);
-                var created = go.AddComponent<SpriteRenderer>();
-                created.sortingOrder = -1;
-                _beams.Add(created);
+                _beams.Add(SpawnLibrary.Spawn(SpawnLibrary.Current.skyBeam, transform));
             }
 
             var renderer = _beams[index];
             renderer.gameObject.SetActive(true);
             renderer.sharedMaterial = _material;
             renderer.sprite = QuadSprite();
-            renderer.color = Color.white;
             return renderer;
         }
     }

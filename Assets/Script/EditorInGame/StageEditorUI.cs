@@ -62,6 +62,7 @@ namespace Pulling
         Button _paletteDockButton;
         Button _paletteColumnsButton;
         RectTransform _settingsRect;
+        StageWidthPreview _widthPreview;
         readonly List<StageListItem> _stageRows = new List<StageListItem>();
 
         public void Bind(GameObject editor, GameObject settings, GameObject hint, Transform content, Text status, StageEditorController controller)
@@ -108,6 +109,7 @@ namespace Pulling
             if (widthInputField != null)
             {
                 widthInputField.onEndEdit.AddListener(OnWidthEndEdit);
+                widthInputField.onValueChanged.AddListener(OnWidthValueChanged);
             }
         }
 
@@ -128,6 +130,7 @@ namespace Pulling
             if (widthInputField != null)
             {
                 widthInputField.onEndEdit.RemoveListener(OnWidthEndEdit);
+                widthInputField.onValueChanged.RemoveListener(OnWidthValueChanged);
             }
         }
 
@@ -187,7 +190,11 @@ namespace Pulling
             {
                 widthInputField.SetTextWithoutNotify(currentWidth.ToString());
             }
+
+            SyncWidthPreview();
         }
+
+        void OnWidthValueChanged(string _) => SyncWidthPreview();
 
         void OnWidthEndEdit(string _) => TryApplyWidth();
 
@@ -221,6 +228,123 @@ namespace Pulling
             }
 
             return width >= 1 && width <= 256;
+        }
+
+        void CompactWidthInput()
+        {
+            if (widthInputField == null)
+            {
+                return;
+            }
+
+            var fieldLayout = widthInputField.GetComponent<LayoutElement>();
+            if (fieldLayout != null)
+            {
+                fieldLayout.minHeight = 34f;
+                fieldLayout.preferredHeight = 34f;
+                fieldLayout.flexibleHeight = 0f;
+            }
+
+            var row = widthInputField.transform.parent;
+            if (row == null)
+            {
+                return;
+            }
+
+            var rowLayout = row.GetComponent<LayoutElement>();
+            if (rowLayout != null)
+            {
+                rowLayout.minHeight = 34f;
+                rowLayout.preferredHeight = 34f;
+                rowLayout.flexibleHeight = 0f;
+            }
+
+            var horizontal = row.GetComponent<HorizontalLayoutGroup>();
+            if (horizontal != null)
+            {
+                horizontal.childForceExpandHeight = false;
+            }
+
+            EnsureWidthStepButtons(row);
+        }
+
+        void EnsureWidthStepButtons(Transform row)
+        {
+            if (row.Find("WidthMinus") != null)
+            {
+                return;
+            }
+
+            var minus = CreateButton(row, "WidthMinus", "−1", new Vector2(44f, 34f), () => StepWidth(-1), new Color(0.28f, 0.32f, 0.4f));
+            FitWidthStep(minus);
+            var plus = CreateButton(row, "WidthPlus", "+1", new Vector2(44f, 34f), () => StepWidth(1), new Color(0.28f, 0.32f, 0.4f));
+            FitWidthStep(plus);
+        }
+
+        static void FitWidthStep(UiButton button)
+        {
+            button.layout.minWidth = 44f;
+            button.layout.preferredWidth = 44f;
+            button.layout.flexibleWidth = 0f;
+            button.layout.minHeight = 34f;
+            button.layout.preferredHeight = 34f;
+            button.layout.flexibleHeight = 0f;
+            button.label.fontSize = 18;
+        }
+
+        void StepWidth(int delta)
+        {
+            int basis = _currentWidth;
+            if (widthInputField != null && TryParseWidth(widthInputField.text, out int typed))
+            {
+                basis = typed;
+            }
+
+            int next = Mathf.Clamp(basis + delta, 1, 256);
+            if (widthInputField != null)
+            {
+                widthInputField.SetTextWithoutNotify(next.ToString());
+            }
+
+            _editor?.ApplyGridWidth(next);
+        }
+
+        void EnsureWidthPreview()
+        {
+            if (_widthPreview != null || widthInputField == null)
+            {
+                return;
+            }
+
+            var row = widthInputField.transform.parent;
+            if (row == null || row.parent == null)
+            {
+                return;
+            }
+
+            _widthPreview = StageWidthPreview.Create(row.parent, row.GetSiblingIndex() + 1);
+            _widthPreview.gameObject.SetActive(false);
+        }
+
+        void SyncWidthPreview()
+        {
+            if (_widthPreview == null || _editor == null || settingsPanel == null || !settingsPanel.activeSelf)
+            {
+                return;
+            }
+
+            if (!_editor.TryGetWidthPreviewSource(out Camera gameplay, out float cellSize))
+            {
+                return;
+            }
+
+            int cells = _currentWidth;
+            if (widthInputField != null && TryParseWidth(widthInputField.text, out int typed))
+            {
+                cells = typed;
+            }
+
+            _widthPreview.SetSource(gameplay, cellSize, cells);
         }
 
         public void SetEditorVisible(bool visible)
@@ -403,6 +527,7 @@ namespace Pulling
 
         void LateUpdate()
         {
+            SyncWidthPreview();
             if (!_commitOrderQueued)
             {
                 return;
@@ -485,6 +610,16 @@ namespace Pulling
             {
                 LayoutRebuilder.ForceRebuildLayoutImmediate(_settingsRect);
             }
+
+            if (_widthPreview != null)
+            {
+                _widthPreview.gameObject.SetActive(visible);
+            }
+
+            if (visible)
+            {
+                SyncWidthPreview();
+            }
         }
 
         void PrepareSettings()
@@ -496,92 +631,17 @@ namespace Pulling
 
             _settingsPrepared = true;
             _settingsRect = (RectTransform)settingsPanel.transform;
-            if (TryUseSettingsPrefab())
+            if (!TryUseSettingsPrefab())
             {
-                SetInactive(changeStageButton);
-                SetInactive(saveAsNewButton);
-                SetInactive(overwriteButton);
-                return;
+                Debug.LogError("SettingsPanel は Prefab の SettingsPanelView を使ってください。");
             }
 
-            _settingsRect.anchorMin = new Vector2(0.5f, 0.5f);
-            _settingsRect.anchorMax = new Vector2(0.5f, 0.5f);
-            _settingsRect.pivot = new Vector2(0.5f, 0.5f);
-            _settingsRect.sizeDelta = new Vector2(1080f, 680f);
-            _settingsRect.anchoredPosition = Vector2.zero;
+            CompactWidthInput();
+            EnsureWidthPreview();
 
             SetInactive(changeStageButton);
             SetInactive(saveAsNewButton);
             SetInactive(overwriteButton);
-
-            var bodyGo = new GameObject("SettingsBody", typeof(RectTransform));
-            bodyGo.transform.SetParent(_settingsRect, false);
-            var bodyElement = bodyGo.AddComponent<LayoutElement>();
-            bodyElement.flexibleWidth = 1f;
-            bodyElement.flexibleHeight = 1f;
-            var bodyLayout = bodyGo.AddComponent<HorizontalLayoutGroup>();
-            bodyLayout.padding = new RectOffset(20, 20, 20, 20);
-            bodyLayout.spacing = 20f;
-            bodyLayout.childAlignment = TextAnchor.UpperLeft;
-            bodyLayout.childForceExpandWidth = false;
-            bodyLayout.childForceExpandHeight = true;
-            bodyLayout.childControlWidth = true;
-            bodyLayout.childControlHeight = true;
-
-            var columnGo = new GameObject("SettingsColumn", typeof(RectTransform));
-            columnGo.transform.SetParent(bodyGo.transform, false);
-            var columnElement = columnGo.AddComponent<LayoutElement>();
-            columnElement.minWidth = 300f;
-            columnElement.preferredWidth = 340f;
-            columnElement.flexibleWidth = 0f;
-            columnElement.flexibleHeight = 1f;
-            var columnLayout = columnGo.AddComponent<VerticalLayoutGroup>();
-            columnLayout.spacing = 12f;
-            columnLayout.padding = new RectOffset(8, 8, 8, 8);
-            columnLayout.childAlignment = TextAnchor.UpperLeft;
-            columnLayout.childForceExpandWidth = true;
-            columnLayout.childForceExpandHeight = false;
-            columnLayout.childControlWidth = true;
-            columnLayout.childControlHeight = true;
-
-            if (stageNameLabel == null)
-            {
-                stageNameLabel = CreateLabel(columnGo.transform, "CurrentStageName", "ステージ", 24, TextAnchor.MiddleLeft).text;
-            }
-            else
-            {
-                stageNameLabel.transform.SetParent(columnGo.transform, false);
-            }
-
-            stageNameLabel.gameObject.SetActive(true);
-            BuildWidthRow(columnGo.transform);
-
-            var spacerGo = new GameObject("SettingsSpacer", typeof(RectTransform));
-            spacerGo.transform.SetParent(columnGo.transform, false);
-            var spacerElement = spacerGo.AddComponent<LayoutElement>();
-            spacerElement.flexibleHeight = 1f;
-
-            if (closeButton == null)
-            {
-                closeButton = CreateButton(columnGo.transform, "ClosePanel", "閉じる", new Vector2(360f, 48f), null, new Color(0.3f, 0.3f, 0.33f)).button;
-            }
-            else
-            {
-                closeButton.transform.SetParent(columnGo.transform, false);
-            }
-
-            closeButton.gameObject.SetActive(true);
-
-            if (openFolderButton == null)
-            {
-                openFolderButton = CreateButton(columnGo.transform, "OpenEditStageFolder", "フォルダを開く", new Vector2(360f, 48f), null, new Color(0.2f, 0.45f, 0.4f)).button;
-            }
-
-            BuildStageList(bodyGo.transform);
-            openFolderButton.transform.SetParent(stageListPanel.transform, false);
-            openFolderButton.gameObject.SetActive(true);
-            columnGo.transform.SetSiblingIndex(0);
-            stageListPanel.transform.SetSiblingIndex(1);
         }
 
         bool TryUseSettingsPrefab()
@@ -604,143 +664,6 @@ namespace Pulling
             return true;
         }
 
-        void BuildWidthRow(Transform column)
-        {
-            var rowGo = new GameObject("WidthRow", typeof(RectTransform));
-            rowGo.transform.SetParent(column, false);
-            var element = rowGo.AddComponent<LayoutElement>();
-            element.minHeight = 48f;
-            element.preferredHeight = 48f;
-            var layout = rowGo.AddComponent<HorizontalLayoutGroup>();
-            layout.spacing = 12f;
-            layout.childAlignment = TextAnchor.MiddleLeft;
-            layout.childForceExpandWidth = false;
-            layout.childForceExpandHeight = true;
-            layout.childControlWidth = true;
-            layout.childControlHeight = true;
-
-            var label = CreateLabel(rowGo.transform, "WidthLabel", "横幅", 22, TextAnchor.MiddleLeft);
-            label.layout.minWidth = 72f;
-            label.layout.preferredWidth = 72f;
-            label.layout.flexibleWidth = 0f;
-
-            if (widthInputField == null)
-            {
-                var input = CreateInputField(rowGo.transform, "WidthInput", "48", new Vector2(240f, 48f));
-                widthInputField = input.field;
-                input.layout.flexibleWidth = 1f;
-                input.layout.minWidth = 120f;
-                input.layout.minHeight = 48f;
-                input.layout.preferredHeight = 48f;
-            }
-            else
-            {
-                widthInputField.transform.SetParent(rowGo.transform, false);
-            }
-        }
-
-        void BuildStageList(Transform parent)
-        {
-            var go = new GameObject("StageListPanel", typeof(RectTransform));
-            go.transform.SetParent(parent, false);
-            stageListPanel = go;
-            var listElement = go.AddComponent<LayoutElement>();
-            listElement.minWidth = 560f;
-            listElement.preferredWidth = 680f;
-            listElement.flexibleWidth = 1f;
-            listElement.flexibleHeight = 1f;
-            var image = go.AddComponent<Image>();
-            image.color = new Color(0.09f, 0.09f, 0.12f, 1f);
-            var layout = go.AddComponent<VerticalLayoutGroup>();
-            layout.padding = new RectOffset(24, 24, 24, 24);
-            layout.spacing = 12f;
-            layout.childForceExpandWidth = true;
-            layout.childForceExpandHeight = false;
-            layout.childControlWidth = true;
-            layout.childControlHeight = true;
-
-            CreateLabel(go.transform, "StageListTitle", "ステージ一覧", 24, TextAnchor.MiddleLeft);
-            var hint = CreateLabel(go.transform, "StageListHint", "左の ≡ をドラッグすると順番が変わります", 16, TextAnchor.MiddleLeft);
-            hint.text.color = new Color(1f, 1f, 1f, 0.72f);
-            hint.text.horizontalOverflow = HorizontalWrapMode.Wrap;
-            hint.layout.minHeight = 44f;
-            hint.layout.preferredHeight = 44f;
-
-            var scrollGo = new GameObject("Scroll", typeof(RectTransform));
-            scrollGo.transform.SetParent(go.transform, false);
-            var scrollElement = scrollGo.AddComponent<LayoutElement>();
-            scrollElement.minHeight = 360f;
-            scrollElement.preferredHeight = 360f;
-            scrollElement.flexibleHeight = 1f;
-            var scrollImage = scrollGo.AddComponent<Image>();
-            scrollImage.color = new Color(0.08f, 0.08f, 0.1f, 0.9f);
-            var scroll = scrollGo.AddComponent<ScrollRect>();
-            scroll.horizontal = false;
-            scroll.vertical = true;
-            scroll.movementType = ScrollRect.MovementType.Clamped;
-
-            var viewport = new GameObject("Viewport", typeof(RectTransform));
-            viewport.transform.SetParent(scrollGo.transform, false);
-            var viewportRt = (RectTransform)viewport.transform;
-            viewportRt.anchorMin = Vector2.zero;
-            viewportRt.anchorMax = Vector2.one;
-            viewportRt.offsetMin = new Vector2(8f, 8f);
-            viewportRt.offsetMax = new Vector2(-8f, -8f);
-            var viewportImage = viewport.AddComponent<Image>();
-            viewportImage.color = new Color(1f, 1f, 1f, 0.02f);
-            var mask = viewport.AddComponent<Mask>();
-            mask.showMaskGraphic = false;
-            scroll.viewport = viewportRt;
-
-            var content = new GameObject("Content", typeof(RectTransform));
-            content.transform.SetParent(viewport.transform, false);
-            var contentRt = (RectTransform)content.transform;
-            contentRt.anchorMin = new Vector2(0f, 1f);
-            contentRt.anchorMax = new Vector2(1f, 1f);
-            contentRt.pivot = new Vector2(0.5f, 1f);
-            contentRt.offsetMin = Vector2.zero;
-            contentRt.offsetMax = Vector2.zero;
-            var fitter = content.AddComponent<ContentSizeFitter>();
-            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-            var contentLayout = content.AddComponent<VerticalLayoutGroup>();
-            contentLayout.spacing = 8f;
-            contentLayout.padding = new RectOffset(4, 4, 4, 4);
-            contentLayout.childForceExpandWidth = true;
-            contentLayout.childForceExpandHeight = false;
-            contentLayout.childControlHeight = true;
-            contentLayout.childControlWidth = true;
-            scroll.content = contentRt;
-            stageListContent = contentRt;
-
-            var warning = CreateLabel(go.transform, "NewStageWarning", string.Empty, 18, TextAnchor.MiddleLeft);
-            warning.text.color = new Color(1f, 0.72f, 0.45f, 1f);
-            warning.text.gameObject.SetActive(false);
-            newStageWarningLabel = warning.text;
-
-            var rowGo = new GameObject("NewStageRow", typeof(RectTransform));
-            rowGo.transform.SetParent(go.transform, false);
-            var rowElement = rowGo.AddComponent<LayoutElement>();
-            rowElement.minHeight = 48f;
-            rowElement.preferredHeight = 48f;
-            var rowLayout = rowGo.AddComponent<HorizontalLayoutGroup>();
-            rowLayout.spacing = 8f;
-            rowLayout.childForceExpandWidth = false;
-            rowLayout.childForceExpandHeight = true;
-            rowLayout.childControlWidth = true;
-            rowLayout.childControlHeight = true;
-
-            var input = CreateInputField(rowGo.transform, "NewStageInput", "新規ステージ名（空なら自動）", new Vector2(280f, 48f), InputField.ContentType.Standard);
-            input.layout.flexibleWidth = 1f;
-            input.layout.minWidth = 180f;
-            newStageInputField = input.field;
-
-            var create = CreateButton(rowGo.transform, "CreateStage", "作成", new Vector2(120f, 48f), null, new Color(0.25f, 0.5f, 0.35f));
-            create.layout.minWidth = 120f;
-            create.layout.preferredWidth = 120f;
-            create.layout.flexibleWidth = 0f;
-            createStageButton = create.button;
-            SetNewStageWarning(null);
-        }
 
         static void SetInactive(Component component)
         {

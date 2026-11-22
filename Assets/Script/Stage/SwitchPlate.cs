@@ -17,6 +17,8 @@ namespace Pulling
         GridMapBuilder _builder;
         SpriteRenderer _renderer;
         BoxCollider2D _collider;
+        public SpriteRenderer plateRenderer;
+        public BoxCollider2D plateCollider;
         Transform _lever;
         int _x;
         int _y;
@@ -41,8 +43,8 @@ namespace Pulling
             _y = y;
             _toggle = toggle && !light;
             _light = light;
-            _renderer = GetComponent<SpriteRenderer>();
-            _collider = GetComponent<BoxCollider2D>();
+            _renderer = plateRenderer;
+            _collider = plateCollider;
             if (_toggle)
             {
                 SetupLever(color);
@@ -192,17 +194,11 @@ namespace Pulling
             if (_renderer != null)
             {
                 _renderer.sprite = SpriteFactory.CreateLeverBase(color);
-                _renderer.color = Color.white;
             }
 
-            var leverObject = new GameObject("Lever");
-            leverObject.transform.SetParent(transform, false);
-            leverObject.transform.localPosition = new Vector3(0f, -0.18f, 0f);
-            leverObject.transform.localRotation = Quaternion.Euler(0f, 0f, OffAngle);
-            var leverRenderer = leverObject.AddComponent<SpriteRenderer>();
+            var leverRenderer = SpawnLibrary.Spawn(SpawnLibrary.Current.switchLever, transform);
             leverRenderer.sprite = SpriteFactory.CreateLeverHandle(color);
-            leverRenderer.sortingOrder = _renderer != null ? _renderer.sortingOrder + 1 : 2;
-            _lever = leverObject.transform;
+            _lever = leverRenderer.transform;
             _shownAngle = OffAngle;
         }
 

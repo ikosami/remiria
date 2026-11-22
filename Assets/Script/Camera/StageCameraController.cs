@@ -58,7 +58,7 @@ namespace Pulling
 
         public Vector3 ClampPosition(Vector3 position)
         {
-            if (_camera == null)
+            if (_camera == null || _mapWidth <= 0f || _mapHeight <= 0f)
             {
                 return position;
             }
@@ -81,7 +81,7 @@ namespace Pulling
 
         void LateUpdate()
         {
-            if (_camera == null || !followEnabled)
+            if (_camera == null || !followEnabled || _mapWidth <= 0f || _mapHeight <= 0f)
             {
                 return;
             }
